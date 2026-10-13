@@ -33,6 +33,7 @@
       --danger: #e63946;
       --danger-soft: #ffebee;
       --warning: #e76f51;
+      --warning-soft: #fff3e0;
       --info: #2a9d8f;
       --shadow-sm: 0 2px 8px rgba(19, 42, 19, 0.04);
       --shadow-md: 0 8px 24px rgba(19, 42, 19, 0.06);
@@ -68,14 +69,15 @@
     .stat-val { font-size: 19px; font-weight: 700; color: var(--primary); margin-top: 2px; }
     .stat-label { font-size: 12px; color: var(--text-muted); }
 
-    /* Touch POS Product Cards (แตะเลือกสินค้าด่วน) */
-    .pos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 10px; margin-bottom: 16px; }
+    /* Touch POS Product Cards */
+    .pos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-bottom: 16px; }
     .pos-item-card { background: #fafcfa; border: 1.5px solid var(--border-subtle); border-radius: 12px; padding: 12px; cursor: pointer; text-align: center; transition: 0.15s; }
     .pos-item-card:active { transform: scale(0.96); }
     .pos-item-card.selected { border-color: var(--primary); background: var(--accent-soft); }
     .pos-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .pos-price { font-size: 14px; font-weight: 700; color: var(--warning); }
     .pos-stock { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .pos-age { font-size: 10px; color: var(--primary); background: #e0eee4; border-radius: 10px; padding: 2px 6px; display: inline-block; margin-top: 4px; }
 
     /* Form Inputs */
     .form-group { margin-bottom: 12px; }
@@ -94,7 +96,7 @@
     .btn-edit-sm { background: #f0f7f4; color: var(--primary); border: 1px solid var(--border-subtle); padding: 5px 10px; font-size: 12px; font-weight: 600; border-radius: 8px; cursor: pointer; }
     .btn-logout { background: var(--danger-soft); color: var(--danger); border: none; padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
 
-    /* Total box */
+    /* Total banner */
     .total-banner { background: #fff8f6; border: 1.5px dashed #fcd5ce; border-radius: var(--radius-sm); padding: 12px 16px; margin: 12px 0; display: flex; justify-content: space-between; align-items: center; }
     .total-banner-price { font-size: 22px; font-weight: 700; color: var(--danger); }
 
@@ -103,11 +105,15 @@
     table { width: 100%; border-collapse: separate; border-spacing: 0; }
     th { background: #fafbfc; color: var(--text-muted); font-size: 12px; font-weight: 600; padding: 10px 8px; border-bottom: 1.5px solid var(--border-subtle); text-align: left; }
     td { padding: 12px 8px; border-bottom: 1px solid #f2f5f3; font-size: 14px; vertical-align: middle; }
+    
+    /* Badges */
     .status-badge { display: inline-block; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
     .badge-success { background: var(--accent-soft); color: var(--primary); }
     .badge-danger { background: var(--danger-soft); color: var(--danger); }
+    .badge-growing { background: #e0f2fe; color: #0369a1; }
+    .badge-overdue { background: #fef3c7; color: #b45309; }
 
-    /* Auth Card Segmented Tabs */
+    /* Auth */
     .auth-toggle { display: flex; background: #edf2ee; padding: 4px; border-radius: 12px; margin-bottom: 18px; }
     .auth-tab { flex: 1; text-align: center; padding: 9px; font-size: 14px; font-weight: 600; border-radius: 9px; cursor: pointer; color: var(--text-muted); }
     .auth-tab.active { background: #ffffff; color: var(--primary); box-shadow: var(--shadow-sm); }
@@ -127,7 +133,7 @@
     <div style="text-align: center; margin-bottom: 20px;">
       <div style="font-size: 32px;">🌱</div>
       <h1 style="color: var(--primary); font-size: 22px;">สวนพร้อม (Suan-Prom)</h1>
-      <p style="color: var(--text-muted); font-size: 13px;">ระบบจัดการร้านและสต็อกต้นกล้า</p>
+      <p style="color: var(--text-muted); font-size: 13px;">ระบบจัดการร้านและสต็อกต้นกล้าอัจฉริยะ</p>
     </div>
 
     <div class="auth-toggle">
@@ -164,15 +170,15 @@
       </div>
     </div>
 
-    <!-- แดชบอร์ดสรุปตัวเลขภาพรวม -->
+    <!-- แดชบอร์ดสรุปตัวเลข -->
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-label">ยอดขายวันนี้</div>
         <div class="stat-val" id="statTodaySales">0 บ.</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">ต้นกล้าพร้อมขาย</div>
-        <div class="stat-val" id="statTotalStock">0 ต้น</div>
+        <div class="stat-label">พร้อมจำหน่าย</div>
+        <div class="stat-val" style="color: var(--accent);" id="statReadyStock">0 รุ่น</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">สต็อกใกล้หมด</div>
@@ -187,7 +193,6 @@
           <h2>🛒 แตะเลือกต้นกล้าที่ต้องการขาย</h2>
         </div>
         
-        <!-- การ์ดสินค้าแตะด่วน -->
         <div class="pos-grid" id="posGridContainer">
           <div class="empty-text">กำลังโหลดรายการต้นกล้า...</div>
         </div>
@@ -234,26 +239,27 @@
       </div>
     </div>
 
-    <!-- ================== แท็บที่ 2: จัดการคลังสต็อก ================== -->
+    <!-- ================== แท็บที่ 2: จัดการคลังสต็อก & รอบเพาะ ================== -->
     <div id="tabStock" class="tab-content">
-      <!-- ตารางสต็อกคงเหลือ -->
+      <!-- ตารางสต็อกคงเหลือและอายุกล้า -->
       <div class="card">
         <div class="card-header">
-          <h2>📋 รายการสต็อกต้นกล้าทั้งหมด</h2>
+          <h2>📋 ข้อมูลสต็อก & รอบอายุต้นกล้า</h2>
         </div>
         <div class="table-container">
           <table>
             <thead>
               <tr>
-                <th>ชื่อสินค้า</th>
-                <th>ราคาขาย</th>
+                <th>ชื่อ / รุ่นเพาะ</th>
+                <th>ราคา</th>
                 <th>คงเหลือ</th>
-                <th>สถานะ</th>
+                <th>อายุกล้า</th>
+                <th>สถานะความพร้อม</th>
                 <th style="text-align: center;">แก้ไข</th>
               </tr>
             </thead>
             <tbody id="productTableBody">
-              <tr><td colspan="5" class="empty-text">กำลังโหลดสต็อก...</td></tr>
+              <tr><td colspan="6" class="empty-text">กำลังโหลดข้อมูล...</td></tr>
             </tbody>
           </table>
         </div>
@@ -287,28 +293,41 @@
           </div>
           <div class="form-group" style="flex: 2;">
             <label>หมายเหตุ</label>
-            <input type="text" id="adjNote" placeholder="เช่น เพาะกล้ารุ่น 2 หรือ คัดทิ้ง">
+            <input type="text" id="adjNote" placeholder="เช่น เพาะกล้ารุ่น 2 หรือ คัดกล้าเฉาทิ้ง">
           </div>
         </div>
         <button class="btn btn-adjust" onclick="submitStockAdjustment()">📥 บันทึกการปรับสต็อก</button>
       </div>
 
-      <!-- เพิ่ม / แก้ไขสินค้า -->
+      <!-- เพิ่ม / แก้ไขสินค้า พร้อมระบบระบุรอบเพาะ -->
       <div class="card" id="productFormCard">
         <div class="card-header">
-          <h2 id="productFormTitle">📦 เพิ่มต้นกล้า / สินค้าใหม่</h2>
+          <h2 id="productFormTitle">🌱 เพิ่มต้นกล้า / รอบเพาะใหม่</h2>
         </div>
         <input type="hidden" id="editingProductId" value="">
         <div class="form-row">
           <div class="form-group" style="flex: 2;">
             <label>ชื่อต้นกล้า / ชนิดพืช</label>
-            <input type="text" id="pName" placeholder="เช่น กล้าพริกขี้หนู, เมล็ดมะเขือเปราะ">
+            <input type="text" id="pName" placeholder="เช่น กล้าพริกจินดา รุ่น 1, มะเขือเทศเชอรี่">
           </div>
           <div class="form-group">
             <label>ประเภท</label>
             <input type="text" id="pType" value="ต้นกล้า">
           </div>
         </div>
+
+        <!-- ช่องระบุวันที่เริ่มเพาะ และระยะเวลาพร้อมย้ายปลูก -->
+        <div class="form-row" style="background: #f7faf8; padding: 10px; border-radius: 10px; border: 1px dashed var(--accent);">
+          <div class="form-group" style="flex: 1;">
+            <label>📅 วันที่เริ่มเพาะเมล็ด</label>
+            <input type="date" id="pSowDate">
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label>⏳ อายุพร้อมขาย/ย้ายปลูก (วัน)</label>
+            <input type="number" id="pReadyDays" value="25" min="1" placeholder="เช่น 25 วัน">
+          </div>
+        </div>
+
         <div class="form-row">
           <div class="form-group">
             <label>หน่วยนับ</label>
@@ -334,7 +353,7 @@
           </div>
         </div>
         <div class="form-row" id="formActionButtons" style="margin-bottom: 0;">
-          <button class="btn" id="saveProductBtn" onclick="saveProduct()">💾 บันทึกเพิ่มสินค้า</button>
+          <button class="btn" id="saveProductBtn" onclick="saveProduct()">💾 บันทึกเพิ่มต้นกล้า</button>
         </div>
       </div>
     </div>
@@ -394,15 +413,15 @@
       </div>
     </div>
 
-    <!-- แถบเมนูด้านล่าง (Bottom Navigation) -->
+    <!-- Bottom Navigation -->
     <nav class="nav-bar">
       <button class="nav-item active" id="navPos" onclick="switchTab('tabPos')">
         <span class="icon">🛒</span>
         <span>ขายหน้าร้าน</span>
       </button>
       <button class="nav-item" id="navStock" onclick="switchTab('tabStock')">
-        <span class="icon">📦</span>
-        <span>คลังสต็อก</span>
+        <span class="icon">🌱</span>
+        <span>คลังรอบเพาะ</span>
       </button>
       <button class="nav-item" id="navCalc" onclick="switchTab('tabCalc')">
         <span class="icon">🔢</span>
@@ -435,6 +454,8 @@
   let currentAuthMode = 'login';
 
   window.onload = function() {
+    // ตั้งค่าเริ่มต้นวันที่เพาะเป็นวันปัจจุบัน
+    document.getElementById('pSowDate').value = new Date().toISOString().split('T')[0];
     runCalculator();
     initAuthListener();
   };
@@ -615,6 +636,29 @@
     loadShops();
   }
 
+  // คำนวณอายุและสถานะความพร้อมของต้นกล้า
+  function calculatePlantAge(sowDateStr, readyDays) {
+    if (!sowDateStr) return { ageDays: null, statusBadge: '<span class="status-badge" style="background:#eee;">ไม่ระบุวันเพาะ</span>' };
+    
+    const now = new Date();
+    const sow = new Date(sowDateStr);
+    const diffTime = now - sow;
+    const ageDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
+    const targetDays = parseInt(readyDays) || 25;
+
+    let statusBadge = '';
+    if (ageDays < targetDays) {
+      const remain = targetDays - ageDays;
+      statusBadge = `<span class="status-badge badge-growing">🌱 กล้าอ่อน (อีก ${remain} วัน)</span>`;
+    } else if (ageDays <= targetDays + 10) {
+      statusBadge = `<span class="status-badge badge-success">✨ พร้อมย้ายปลูก/ขาย</span>`;
+    } else {
+      statusBadge = `<span class="status-badge badge-overdue">⚠️ เกินกำหนด (${ageDays - targetDays} วัน)</span>`;
+    }
+
+    return { ageDays, statusBadge };
+  }
+
   async function loadProducts() {
     const tbody = document.getElementById('productTableBody');
     const sellSelect = document.getElementById('sellProductSelect');
@@ -622,7 +666,7 @@
     const posGrid = document.getElementById('posGridContainer');
 
     if (!activeShopId) {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty-text">กรุณาสร้างหรือเลือกร้านค้าก่อน</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-text">กรุณาสร้างหรือเลือกร้านค้าก่อน</td></tr>';
       posGrid.innerHTML = '<div class="empty-text">กรุณาสร้างหรือเลือกร้านค้าก่อน</div>';
       sellSelect.innerHTML = '<option value="">-- เลือกร้านค้าก่อน --</option>';
       adjSelect.innerHTML = '<option value="">-- เลือกร้านค้าก่อน --</option>';
@@ -632,7 +676,7 @@
 
     const { data, error } = await sb.from('products').select('*').eq('shop_id', activeShopId).order('id', { ascending: false });
     if (error) {
-      tbody.innerHTML = `<tr><td colspan="5" class="empty-text">เกิดข้อผิดพลาด: ${error.message}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" class="empty-text">เกิดข้อผิดพลาด: ${error.message}</td></tr>`;
       return;
     }
 
@@ -642,7 +686,7 @@
     posGrid.innerHTML = '';
 
     if (!data || data.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty-text">ยังไม่มีสินค้าในร้านนี้</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-text">ยังไม่มีสินค้าในร้านนี้</td></tr>';
       posGrid.innerHTML = '<div class="empty-text">ยังไม่มีรายการต้นกล้าในระบบ</div>';
       updateStats();
       return;
@@ -651,27 +695,26 @@
     tbody.innerHTML = '';
     data.forEach(p => {
       const isLow = p.stock <= (p.low_stock_at || 0);
+      const { ageDays, statusBadge } = calculatePlantAge(p.sow_date, p.ready_days);
 
-      // สร้างตารางสต็อก
       tbody.innerHTML += `
         <tr>
           <td><strong>${p.name}</strong><br><small style="color: var(--text-muted);">${p.type || '-'}</small></td>
           <td><strong>${Number(p.price).toLocaleString()}</strong> บ.</td>
           <td><strong>${p.stock}</strong> <small>${p.unit || ''}</small></td>
-          <td><span class="status-badge ${isLow ? 'badge-danger' : 'badge-success'}">${isLow ? 'สต็อกต่ำ' : 'ปกติ'}</span></td>
+          <td>${ageDays !== null ? ageDays + ' วัน' : '-'}</td>
+          <td>${statusBadge}</td>
           <td style="text-align: center;">
             <button class="btn-edit-sm" onclick="startEditProduct(${p.id})">✏️</button>
           </td>
         </tr>
       `;
 
-      // ตัวเลือกปรับสต็อก
       const adjOpt = document.createElement('option');
       adjOpt.value = p.id;
       adjOpt.textContent = `${p.name} (คงเหลือ: ${p.stock} ${p.unit || ''})`;
       adjSelect.appendChild(adjOpt);
 
-      // การ์ดขายด่วน (POS Quick Grid)
       if (p.stock > 0) {
         const sellOpt = document.createElement('option');
         sellOpt.value = p.id;
@@ -687,6 +730,7 @@
           <div class="pos-name">${p.name}</div>
           <div class="pos-price">${Number(p.price).toLocaleString()} บ.</div>
           <div class="pos-stock">เหลือ ${p.stock} ${p.unit || ''}</div>
+          ${ageDays !== null ? `<div class="pos-age">อายุ ${ageDays} วัน</div>` : ''}
         `;
         posGrid.appendChild(card);
       }
@@ -716,13 +760,19 @@
   }
 
   function updateStats() {
-    let totalStock = 0;
+    let readyCount = 0;
     let lowCount = 0;
+    
     currentProducts.forEach(p => {
-      totalStock += p.stock || 0;
       if (p.stock <= (p.low_stock_at || 0)) lowCount++;
+      const { ageDays } = calculatePlantAge(p.sow_date, p.ready_days);
+      const targetDays = parseInt(p.ready_days) || 25;
+      if (ageDays !== null && ageDays >= targetDays && p.stock > 0) {
+        readyCount++;
+      }
     });
-    document.getElementById('statTotalStock').innerText = totalStock.toLocaleString() + ' ต้น';
+
+    document.getElementById('statReadyStock').innerText = readyCount + ' ชนิด';
     document.getElementById('statLowStock').innerText = lowCount;
   }
 
@@ -737,6 +787,8 @@
     document.getElementById('pPrice').value = p.price;
     document.getElementById('pCost').value = p.cost || 0;
     document.getElementById('pLowStock').value = p.low_stock_at || 20;
+    document.getElementById('pSowDate').value = p.sow_date || new Date().toISOString().split('T')[0];
+    document.getElementById('pReadyDays').value = p.ready_days || 25;
 
     document.getElementById('stockInputGroup').style.display = 'none';
     document.getElementById('productFormTitle').innerText = `✏️ แก้ไขข้อมูล: ${p.name}`;
@@ -761,11 +813,13 @@
     document.getElementById('pCost').value = '';
     document.getElementById('pStock').value = '0';
     document.getElementById('pLowStock').value = '20';
+    document.getElementById('pSowDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('pReadyDays').value = '25';
     document.getElementById('stockInputGroup').style.display = 'flex';
 
-    document.getElementById('productFormTitle').innerText = '📦 เพิ่มต้นกล้า / สินค้าใหม่';
+    document.getElementById('productFormTitle').innerText = '🌱 เพิ่มต้นกล้า / รอบเพาะใหม่';
     document.getElementById('formActionButtons').innerHTML = `
-      <button class="btn" id="saveProductBtn" onclick="saveProduct()">💾 บันทึกเพิ่มสินค้า</button>
+      <button class="btn" id="saveProductBtn" onclick="saveProduct()">💾 บันทึกเพิ่มต้นกล้า</button>
     `;
   }
 
@@ -779,12 +833,14 @@
     const price = parseFloat(document.getElementById('pPrice').value) || 0;
     const cost = parseFloat(document.getElementById('pCost').value) || 0;
     const low_stock_at = parseInt(document.getElementById('pLowStock').value) || 0;
+    const sow_date = document.getElementById('pSowDate').value;
+    const ready_days = parseInt(document.getElementById('pReadyDays').value) || 25;
 
     if (!name) return alert('กรุณาใส่ชื่อสินค้า');
 
     if (editId) {
       const { error } = await sb.from('products').update({
-        name, type, unit, price, cost, low_stock_at, updated_at: new Date().toISOString()
+        name, type, unit, price, cost, low_stock_at, sow_date, ready_days, updated_at: new Date().toISOString()
       }).eq('id', editId);
 
       if (error) return alert('แก้ไขสินค้าไม่สำเร็จ: ' + error.message);
@@ -796,12 +852,12 @@
       const stock = parseInt(document.getElementById('pStock').value) || 0;
       const { error } = await sb.from('products').insert([{
         shop_id: activeShopId,
-        name, type, unit, price, cost, stock, low_stock_at, active: true
+        name, type, unit, price, cost, stock, low_stock_at, sow_date, ready_days, active: true
       }]);
 
       if (error) return alert('บันทึกสินค้าไม่สำเร็จ: ' + error.message);
 
-      alert('เพิ่มสินค้าเรียบร้อย!');
+      alert('เพิ่มรอบเพาะต้นกล้าเรียบร้อย!');
       resetProductForm();
       loadProducts();
     }
