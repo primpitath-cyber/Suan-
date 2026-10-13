@@ -63,7 +63,6 @@
     .stat-val { font-size: 19px; font-weight: 700; color: var(--primary); margin-top: 2px; }
     .stat-label { font-size: 12px; color: var(--text-muted); }
 
-    /* Search & Filter Controls */
     .filter-wrapper { margin-bottom: 14px; }
     .search-box { position: relative; margin-bottom: 10px; }
     .search-input { width: 100%; padding: 10px 14px 10px 36px; border: 1.5px solid var(--border-subtle); border-radius: 20px; font-size: 14px; outline: none; background: #fafbfc; transition: 0.2s; }
@@ -90,7 +89,6 @@
     input, select { width: 100%; padding: 11px 12px; border: 1.5px solid var(--border-subtle); border-radius: var(--radius-sm); font-size: 15px; outline: none; background: #fafbfc; transition: 0.2s; }
     input:focus, select:focus { border-color: var(--accent); background: #ffffff; }
 
-    /* ช่องรหัสผ่านพร้อมปุ่มดูรหัส */
     .password-wrap { position: relative; }
     .toggle-pwd-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 16px; color: var(--text-muted); padding: 4px; }
     .pwd-status-text { font-size: 12px; margin-top: 5px; color: var(--text-muted); transition: 0.2s; }
@@ -149,7 +147,7 @@
 
       <div class="form-group">
         <label>อีเมล (เมลมหาวิทยาลัย หรือ Gmail ทั่วไป)</label>
-        <input type="email" id="authEmail" placeholder="เช่น student@university.ac.th">
+        <input type="email" id="authEmail" placeholder="เช่น student@kmitl.ac.th">
       </div>
       
       <div class="form-group">
@@ -179,7 +177,7 @@
       <h2 style="font-size: 16px; color: var(--primary); margin-bottom: 14px; text-align: center;">🔑 ตั้งรหัสผ่านใหม่ทันที</h2>
       <div class="form-group">
         <label>ระบุอีเมลบัญชีของคุณ</label>
-        <input type="email" id="resetEmail" placeholder="เช่น student@university.ac.th">
+        <input type="email" id="resetEmail" placeholder="เช่น student@kmitl.ac.th">
       </div>
       <div class="form-group">
         <label>รหัสผ่านใหม่</label>
@@ -491,13 +489,7 @@
   const SB_URL = 'https://slrczkvhogdvexwonyiw.supabase.co';
   const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNscmN6a3Zob2dkdmV4d29ueWl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjAyMjksImV4cCI6MjEwNzQzNjIyOX0.Xy2cgZxc4fSD71tm5Rs_JCfFWleBJdr49dmt1qX3Xyo';
 
-  const sb = supabase.createClient(SB_URL, SB_KEY, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true
-    }
-  });
+  const sb = supabase.createClient(SB_URL, SB_KEY);
 
   let currentUser = null;
   let activeShopId = null;
@@ -512,7 +504,6 @@
     initAuthListener();
   };
 
-  // ตรวจสอบและแสดงข้อความเตือนรหัสผ่านหน้าล็อกอิน/สมัครสมาชิกแบบเรียลไทม์
   function checkPasswordStrength(val) {
     const hint = document.getElementById('pwdHint');
     if (!hint) return;
@@ -529,7 +520,6 @@
     }
   }
 
-  // ตรวจสอบสำหรับหน้ารีเซ็ตรหัสผ่านใหม่
   function checkResetPasswordStrength(val) {
     const hint = document.getElementById('resetPwdHint');
     if (!hint) return;
@@ -546,7 +536,6 @@
     }
   }
 
-  // ฟังก์ชันสลับการมองเห็นรหัสผ่าน
   function togglePasswordVisibility(inputId, btn) {
     const field = document.getElementById(inputId);
     if (field.type === 'password') {
@@ -558,7 +547,6 @@
     }
   }
 
-  // ฟังก์ชันสลับหน้าต่างลืมรหัสผ่าน
   function showForgotPasswordView() {
     document.getElementById('standardAuthView').style.display = 'none';
     document.getElementById('forgotPasswordView').style.display = 'block';
@@ -570,7 +558,6 @@
     document.getElementById('standardAuthView').style.display = 'block';
   }
 
-  // บันทึกรหัสผ่านใหม่ทันที
   async function handleInstantPasswordReset() {
     const email = document.getElementById('resetEmail').value.trim();
     const newPassword = document.getElementById('resetNewPassword').value.trim();
@@ -635,15 +622,17 @@
   }
 
   function initAuthListener() {
-    sb.auth.onAuthStateChange((event, session) => {
-      if (session && session.user) {
-        currentUser = session.user;
+    const savedUser = localStorage.getItem('sp_custom_user');
+    if (savedUser) {
+      try {
+        currentUser = JSON.parse(savedUser);
         showApp();
-      } else {
-        currentUser = null;
+      } catch (e) {
         showAuth();
       }
-    });
+    } else {
+      showAuth();
+    }
 
     const savedEmail = localStorage.getItem('sp_saved_email');
     if (savedEmail) {
@@ -678,15 +667,11 @@
     if (error) return alert('เกิดข้อผิดพลาดในการสมัคร: ' + error.message);
     if (!data.success) return alert(data.message);
 
-    const loginRes = await sb.auth.signInWithPassword({ email, password });
-    if (loginRes.error) return alert('สมัครแล้วแต่เข้าสู่ระบบไม่สำเร็จ: ' + loginRes.error.message);
-
-    if (document.getElementById('rememberMe').checked) {
-      localStorage.setItem('sp_saved_email', email);
-    }
-    alert('🎉 สมัครสมาชิกสำเร็จและเข้าสู่ระบบเรียบร้อย!');
+    alert('🎉 สมัครสมาชิกสำเร็จ! กำลังเข้าสู่ระบบให้ทันที');
+    handleLogin();
   }
 
+  // เข้าสู่ระบบผ่าน custom_login โดยตรง ไม่ติดปัญหา schema querying error
   async function handleLogin() {
     const email = document.getElementById('authEmail').value.trim();
     const password = document.getElementById('authPassword').value.trim();
@@ -694,23 +679,33 @@
     if (!password) return alert('⚠️ กรุณากรอกรหัสผ่าน');
     if (password.length < 6) return alert('⚠️ รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');
 
-    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    const { data, error } = await sb.rpc('custom_login', {
+      user_email: email,
+      user_password: password
+    });
+
     if (error) {
-      if (error.message.includes('Invalid login credentials')) {
-        return alert('❌ อีเมลหรือรหัสผ่านไม่ถูกต้อง (หากยังไม่เคยสมัคร ให้กดแท็บ "สมัครสมาชิกทันที" หรือกด "ลืมรหัสผ่าน?")');
-      }
-      return alert('เข้าสู่ระบบไม่สำเร็จ: ' + error.message);
+      return alert('เกิดข้อผิดพลาด: ' + error.message);
     }
+
+    if (!data.success) {
+      return alert('❌ ' + data.message);
+    }
+
+    currentUser = data.user;
+    localStorage.setItem('sp_custom_user', JSON.stringify(currentUser));
 
     if (document.getElementById('rememberMe').checked) {
       localStorage.setItem('sp_saved_email', email);
     } else {
       localStorage.removeItem('sp_saved_email');
     }
+
+    showApp();
   }
 
   async function handleLogout() {
-    await sb.auth.signOut();
+    localStorage.removeItem('sp_custom_user');
     localStorage.removeItem('sp_user_active_shop');
     currentUser = null;
     activeShopId = null;
