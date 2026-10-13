@@ -1,63 +1,153 @@
-
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>สวนพร้อม</title>
-<style>
-body{font-family:system-ui,sans-serif;background:#f3f7ef;color:#233b2a;margin:0;padding:20px}
-main{max-width:650px;margin:auto}
-header{background:#276749;color:white;padding:22px;border-radius:18px}
-section{background:white;padding:18px;margin-top:16px;border-radius:14px;box-shadow:0 2px 8px #0001}
-input,button{box-sizing:border-box;width:100%;padding:12px;margin-top:9px;border:1px solid #ccd8c9;border-radius:9px;font-size:16px}
-button{background:#276749;color:white;border:0;font-weight:bold}
-.small{font-size:13px;color:#5e7060}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>สวนพร้อม - ระบบจัดการร้านต้นกล้า</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --primary: #2d6a4f;
+      --primary-light: #52b788;
+      --bg: #f4f6f0;
+      --card: #ffffff;
+      --text: #1b4332;
+      --border: #d8f3dc;
+    }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; font-size: 18px; }
+    .container { max-width: 760px; margin: 0 auto; }
+    .card { background: var(--card); border-radius: 16px; padding: 24px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    h1 { color: var(--primary); margin-top: 0; font-size: 28px; text-align: center; }
+    h2 { font-size: 20px; margin-top: 0; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-weight: bold; margin-bottom: 6px; }
+    input[type="text"], input[type="number"], input[type="password"] {
+      width: 100%; padding: 14px; border: 1.5px solid #ccc; border-radius: 10px; font-size: 18px; outline: none;
+    }
+    input:focus { border-color: var(--primary); }
+    .btn {
+      width: 100%; background: var(--primary); color: white; border: none; padding: 16px;
+      font-size: 20px; font-weight: bold; border-radius: 12px; cursor: pointer; transition: 0.2s;
+    }
+    .btn:active { background: #1b4332; transform: scale(0.98); }
+    .status-box { padding: 14px; border-radius: 10px; margin-top: 15px; font-size: 16px; text-align: center; font-weight: bold; }
+    .status-waiting { background: #e9ecef; color: #495057; }
+    .status-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .status-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .calc-row { display: flex; gap: 12px; }
+    .calc-row div { flex: 1; }
+  </style>
 </head>
 <body>
-<main>
-<header>
-<h1>🌱 สวนพร้อม</h1>
-<p>ระบบจัดการร้านต้นกล้าและการขาย</p>
-</header>
-<section>
-<h2>เริ่มต้นใช้งาน</h2>
-<p>ขั้นตอนแรก เราจะเตรียมหน้าร้านของคุณก่อน</p>
-<label>ชื่อสวน / ชื่อร้าน</label>
-<input id="shop" placeholder="เช่น สวนพร้อม">
-<label>ชื่อผู้ดูแล</label>
-<input id="owner" placeholder="ชื่อเจ้าของร้าน">
-<button onclick="save()">บันทึกข้อมูลในเครื่องนี้</button>
-<p id="result" class="small"></p>
-</section>
-<section>
-<h2>🌿 คำนวณจำนวนต้นกล้า</h2>
-<label>พื้นที่ปลูก (ตารางเมตร)</label>
-<input id="area" type="number" min="0" placeholder="เช่น 100">
-<label>ระยะห่างระหว่างต้น (เมตร)</label>
-<input id="spacing" type="number" min="0.01" step="0.01" placeholder="เช่น 0.5">
-<label>ระยะห่างระหว่างแถว (เมตร)</label>
-<input id="row" type="number" min="0.01" step="0.01" placeholder="เช่น 1">
-<button onclick="calc()">คำนวณจำนวนต้น</button>
-<p id="answer"></p>
-</section>
-<p class="small">เวอร์ชันทดลอง: ข้อมูลยังไม่เชื่อมกับฐานข้อมูลออนไลน์</p>
-</main>
-<script>
-function save(){
-const s=document.getElementById('shop').value.trim();
-const o=document.getElementById('owner').value.trim();
-if(!s||!o){document.getElementById('result').textContent='กรุณากรอกชื่อสวนและชื่อผู้ดูแล';return;}
-document.getElementById('result').textContent='บันทึกข้อมูลเบื้องต้นแล้ว: '+s+' — '+o;
-}
-function calc(){
-const a=Number(document.getElementById('area').value);
-const s=Number(document.getElementById('spacing').value);
-const r=Number(document.getElementById('row').value);
-if(a<=0||s<=0||r<=0){document.getElementById('answer').textContent='กรุณากรอกตัวเลขให้ถูกต้อง';return;}
-document.getElementById('answer').textContent='ควรเตรียมประมาณ '+Math.ceil(a/(s*r))+' ต้น';
-}
-</script>
+
+  <div class="container">
+    <h1>🌱 สวนพร้อม (Suan-Prom)</h1>
+
+    <div class="card">
+      <h2>🔌 การเชื่อมต่อฐานข้อมูล Supabase</h2>
+      <div class="form-group">
+        <label for="sbUrl">Project URL</label>
+        <input type="text" id="sbUrl" placeholder="https://xxxxxxxxxxxx.supabase.co">
+      </div>
+      <div class="form-group">
+        <label for="sbKey">Publishable Key (anon key)</label>
+        <input type="password" id="sbKey" placeholder="ใส่ anon key (ห้ามใส่ secret key เด็ดขาด)">
+      </div>
+      <button class="btn" onclick="testConnection()">ทดสอบเชื่อมต่อ Supabase</button>
+      <div id="connStatus" class="status-box status-waiting">สถานะ: รอการตั้งค่าและทดสอบ</div>
+    </div>
+
+    <div class="card">
+      <h2>🏡 ข้อมูลร้านและผู้ดูแล</h2>
+      <div class="form-group">
+        <label for="shopName">ชื่อสวน / ชื่อร้าน</label>
+        <input type="text" id="shopName" placeholder="เช่น สวนพร้อมพันธุ์ไม้">
+      </div>
+      <div class="form-group">
+        <label for="ownerName">ชื่อผู้ดูแล</label>
+        <input type="text" id="ownerName" placeholder="ระบุชื่อผู้ดูแลร้าน">
+      </div>
+      <button class="btn" style="background: var(--primary-light);" onclick="saveLocalInfo()">บันทึกข้อมูลเบื้องต้น</button>
+    </div>
+
+    <div class="card">
+      <h2>🔢 คำนวณจำนวนต้นกล้า</h2>
+      <div class="calc-row">
+        <div class="form-group">
+          <label for="trayCount">จำนวนถาดเพาะ (ถาด)</label>
+          <input type="number" id="trayCount" value="10" oninput="calculateSeedlings()">
+        </div>
+        <div class="form-group">
+          <label for="holesPerTray">หลุมต่อถาด (หลุม)</label>
+          <input type="number" id="holesPerTray" value="104" oninput="calculateSeedlings()">
+        </div>
+      </div>
+      <div class="status-box status-waiting" id="calcResult">รวมประมาณ: 1,040 ต้น</div>
+    </div>
+  </div>
+
+  <script>
+    window.onload = function() {
+      const savedUrl = localStorage.getItem('sp_sb_url');
+      const savedKey = localStorage.getItem('sp_sb_key');
+      const savedShop = localStorage.getItem('sp_shop_name');
+      const savedOwner = localStorage.getItem('sp_owner_name');
+
+      if (savedUrl) document.getElementById('sbUrl').value = savedUrl;
+      if (savedKey) document.getElementById('sbKey').value = savedKey;
+      if (savedShop) document.getElementById('shopName').value = savedShop;
+      if (savedOwner) document.getElementById('ownerName').value = savedOwner;
+      calculateSeedlings();
+    };
+
+    function calculateSeedlings() {
+      const trays = parseFloat(document.getElementById('trayCount').value) || 0;
+      const holes = parseFloat(document.getElementById('holesPerTray').value) || 0;
+      const total = trays * holes;
+      document.getElementById('calcResult').innerText = `รวมประมาณ: ${total.toLocaleString()} ต้น`;
+    }
+
+    function saveLocalInfo() {
+      const shop = document.getElementById('shopName').value.trim();
+      const owner = document.getElementById('ownerName').value.trim();
+      localStorage.setItem('sp_shop_name', shop);
+      localStorage.setItem('sp_owner_name', owner);
+      alert('บันทึกข้อมูลร้านในเครื่องเรียบร้อยแล้วครับ');
+    }
+
+    async function testConnection() {
+      const url = document.getElementById('sbUrl').value.trim();
+      const key = document.getElementById('sbKey').value.trim();
+      const statusBox = document.getElementById('connStatus');
+
+      if (!url || !key) {
+        statusBox.className = "status-box status-error";
+        statusBox.innerText = "กรุณากรอกทั้ง Project URL และ Publishable Key ให้ครบถ้วน";
+        return;
+      }
+
+      statusBox.className = "status-box status-waiting";
+      statusBox.innerText = "กำลังทดสอบเชื่อมต่อไปยัง Supabase...";
+
+      try {
+        const client = supabase.createClient(url, key);
+        const { data, error } = await client.from('shops').select('count', { count: 'exact', head: true });
+
+        if (error) {
+          statusBox.className = "status-box status-error";
+          statusBox.innerText = `เชื่อมต่อไม่สำเร็จ: ${error.message}`;
+        } else {
+          localStorage.setItem('sp_sb_url', url);
+          localStorage.setItem('sp_sb_key', key);
+          statusBox.className = "status-box status-success";
+          statusBox.innerText = "✅ เชื่อมต่อ Supabase สำเร็จเรียบร้อย!";
+        }
+      } catch (err) {
+        statusBox.className = "status-box status-error";
+        statusBox.innerText = `เกิดข้อผิดพลาด: ${err.message || 'ตรวจสอบ URL อีกครั้ง'}`;
+      }
+    }
+  </script>
 </body>
 </html>
