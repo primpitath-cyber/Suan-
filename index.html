@@ -15,6 +15,7 @@
       --text: #1b4332;
       --danger: #d90429;
       --warning: #e76f51;
+      --info: #1d3557;
     }
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: var(--bg); color: var(--text); margin: 0; padding: 16px; font-size: 16px; }
@@ -32,7 +33,7 @@
     .btn:active { background: #1b4332; transform: scale(0.98); }
     .btn-secondary { background: var(--primary-light); }
     .btn-sell { background: #e76f51; }
-    .btn-sell:active { background: #d90429; }
+    .btn-adjust { background: #457b9d; }
     .status-badge { padding: 4px 8px; border-radius: 6px; font-size: 13px; font-weight: bold; }
     .badge-success { background: #d4edda; color: #155724; }
     .badge-danger { background: #f8d7da; color: #721c24; }
@@ -105,7 +106,39 @@
     <button class="btn btn-sell" onclick="submitSale()">💰 บันทึกการขายและตัดสต็อก</button>
   </div>
 
-  <!-- 4. เพิ่มสินค้าใหม่ -->
+  <!-- 4. ปรับปรุงสต็อก (รับเข้า / คัดทิ้ง) -->
+  <div class="card" style="border: 2px solid #a8dadc;">
+    <h2>🔄 ปรับปรุงสต็อกสินค้า (รับเข้า / เสียหาย / คัดทิ้ง)</h2>
+    <div class="form-row">
+      <div class="form-group" style="flex: 2;">
+        <label>เลือกสินค้า</label>
+        <select id="adjProductSelect">
+          <option value="">-- เลือกสินค้า --</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>ประเภทการปรับ</label>
+        <select id="adjType">
+          <option value="in">➕ รับเข้า / เพาะเพิ่ม</option>
+          <option value="waste">➖ คัดทิ้ง / เสียหาย</option>
+          <option value="adjust">✏️ ปรับยอดนับจริง</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>จำนวน</label>
+        <input type="number" id="adjQty" value="10" min="1">
+      </div>
+      <div class="form-group" style="flex: 2;">
+        <label>หมายเหตุ</label>
+        <input type="text" id="adjNote" placeholder="เช่น เพาะกล้ารุ่น 2 หรือ กล้าเหี่ยวเฉา">
+      </div>
+    </div>
+    <button class="btn btn-adjust" onclick="submitStockAdjustment()">📥 บันทึกการปรับสต็อก</button>
+  </div>
+
+  <!-- 5. เพิ่มสินค้าใหม่ -->
   <div class="card">
     <h2>📦 เพิ่มสินค้า / ต้นกล้าใหม่</h2>
     <div class="form-row">
@@ -145,7 +178,7 @@
     <button class="btn" onclick="addNewProduct()">บันทึกเพิ่มสินค้า</button>
   </div>
 
-  <!-- 5. รายการสินค้าและสต็อกคงเหลือ -->
+  <!-- 6. รายการสินค้าและสต็อกคงเหลือ -->
   <div class="card">
     <h2>📋 สต็อกสินค้าคงเหลือ</h2>
     <div style="overflow-x: auto;">
@@ -166,7 +199,7 @@
     </div>
   </div>
 
-  <!-- 6. ประวัติการขายล่าสุด -->
+  <!-- 7. ประวัติการขายล่าสุด -->
   <div class="card">
     <h2>📜 ประวัติการขายล่าสุด (5 รายการ)</h2>
     <div style="overflow-x: auto;">
@@ -185,7 +218,7 @@
     </div>
   </div>
 
-  <!-- 7. เครื่องมือคำนวณถาดเพาะ -->
+  <!-- 8. เครื่องมือคำนวณถาดเพาะ -->
   <div class="card">
     <h2>🔢 คำนวณจำนวนต้นกล้า</h2>
     <div class="form-row">
@@ -308,9 +341,11 @@
   async function loadProducts() {
     const tbody = document.getElementById('productTableBody');
     const sellSelect = document.getElementById('sellProductSelect');
+    const adjSelect = document.getElementById('adjProductSelect');
     if (!sb || !activeShopId) {
       tbody.innerHTML = '<tr><td colspan="5" class="empty-text">กรุณาเลือกร้านค้า</td></tr>';
       sellSelect.innerHTML = '<option value="">-- เลือกร้านค้าก่อน --</option>';
+      adjSelect.innerHTML = '<option value="">-- เลือกร้านค้าก่อน --</option>';
       return;
     }
 
@@ -322,6 +357,7 @@
 
     currentProducts = data || [];
     sellSelect.innerHTML = '<option value="">-- เลือกสินค้า --</option>';
+    adjSelect.innerHTML = '<option value="">-- เลือกสินค้า --</option>';
 
     if (!data || data.length === 0) {
       tbody.innerHTML = '<tr><td colspan="5" class="empty-text">ยังไม่มีสินค้าในร้านนี้</td></tr>';
@@ -341,11 +377,18 @@
         </tr>
       `;
 
+      // ตัวเลือกสำหรับปรับสต็อก (เลือกได้ทุกชิ้น)
+      const adjOpt = document.createElement('option');
+      adjOpt.value = p.id;
+      adjOpt.textContent = `${p.name} (ปัจจุบัน: ${p.stock} ${p.unit || ''})`;
+      adjSelect.appendChild(adjOpt);
+
+      // ตัวเลือกสำหรับขายหน้าร้าน (ต้องมีสต็อก > 0)
       if (p.stock > 0) {
-        const opt = document.createElement('option');
-        opt.value = p.id;
-        opt.textContent = `${p.name} (คงเหลือ: ${p.stock} ${p.unit || ''} | ${p.price} บ.)`;
-        sellSelect.appendChild(opt);
+        const sellOpt = document.createElement('option');
+        sellOpt.value = p.id;
+        sellOpt.textContent = `${p.name} (คงเหลือ: ${p.stock} ${p.unit || ''} | ${p.price} บ.)`;
+        sellSelect.appendChild(sellOpt);
       }
     });
     updateSaleCalc();
@@ -376,7 +419,6 @@
     const total = prod.price * qty;
 
     try {
-      // 1. บันทึกลง sales
       const { data: saleData, error: sErr } = await sb.from('sales').insert([{
         shop_id: activeShopId,
         total: total
@@ -384,7 +426,6 @@
 
       if (sErr) throw sErr;
 
-      // 2. บันทึกลง sale_items
       const { error: siErr } = await sb.from('sale_items').insert([{
         sale_id: saleData.id,
         product_id: prod.id,
@@ -395,7 +436,6 @@
 
       if (siErr) throw siErr;
 
-      // 3. บันทึกลง stock_movements
       await sb.from('stock_movements').insert([{
         shop_id: activeShopId,
         product_id: prod.id,
@@ -404,7 +444,6 @@
         note: `ขายผ่านหน้าร้าน บิล #${saleData.id}`
       }]);
 
-      // 4. ตัดสต็อกจริงในตาราง products
       const newStock = prod.stock - qty;
       const { error: pErr } = await sb.from('products').update({ stock: newStock }).eq('id', prod.id);
 
@@ -416,6 +455,53 @@
       loadRecentSales();
     } catch (err) {
       alert('เกิดข้อผิดพลาดในการขาย: ' + err.message);
+    }
+  }
+
+  async function submitStockAdjustment() {
+    if (!sb || !activeShopId) return alert('กรุณาเลือกร้านค้า');
+    const pId = parseInt(document.getElementById('adjProductSelect').value);
+    const mode = document.getElementById('adjType').value;
+    const qty = parseInt(document.getElementById('adjQty').value);
+    const note = document.getElementById('adjNote').value.trim();
+    const prod = currentProducts.find(p => p.id == pId);
+
+    if (!prod) return alert('กรุณาเลือกสินค้าที่ต้องการปรับสต็อก');
+    if (isNaN(qty) || qty < 0) return alert('กรุณาระบุจำนวนที่ถูกต้อง');
+
+    let delta = 0;
+    let newStock = prod.stock;
+    let movType = mode;
+
+    if (mode === 'in') {
+      delta = qty;
+      newStock = prod.stock + qty;
+    } else if (mode === 'waste') {
+      if (qty > prod.stock) return alert(`ยอดคัดทิ้งเกินสต็อกที่มี (มี ${prod.stock})`);
+      delta = -qty;
+      newStock = prod.stock - qty;
+    } else if (mode === 'adjust') {
+      delta = qty - prod.stock;
+      newStock = qty;
+    }
+
+    try {
+      await sb.from('stock_movements').insert([{
+        shop_id: activeShopId,
+        product_id: prod.id,
+        movement_type: movType,
+        quantity_delta: delta,
+        note: note || `ปรับสต็อก (${mode})`
+      }]);
+
+      const { error } = await sb.from('products').update({ stock: newStock }).eq('id', prod.id);
+      if (error) throw error;
+
+      alert(`ปรับปรุงสต็อก ${prod.name} สำเร็จ! ยอดใหม่คือ ${newStock} ${prod.unit || ''}`);
+      document.getElementById('adjNote').value = '';
+      loadProducts();
+    } catch (err) {
+      alert('ปรับสต็อกไม่สำเร็จ: ' + err.message);
     }
   }
 
