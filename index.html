@@ -63,6 +63,17 @@
     .stat-val { font-size: 19px; font-weight: 700; color: var(--primary); margin-top: 2px; }
     .stat-label { font-size: 12px; color: var(--text-muted); }
 
+    /* Search & Filter Controls */
+    .filter-wrapper { margin-bottom: 14px; }
+    .search-box { position: relative; margin-bottom: 10px; }
+    .search-input { width: 100%; padding: 10px 14px 10px 36px; border: 1.5px solid var(--border-subtle); border-radius: 20px; font-size: 14px; outline: none; background: #fafbfc; transition: 0.2s; }
+    .search-input:focus { border-color: var(--accent); background: #ffffff; }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; color: #888; }
+    .chips-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+    .chips-bar::-webkit-scrollbar { display: none; }
+    .chip { padding: 5px 12px; border-radius: 16px; font-size: 12px; font-weight: 600; cursor: pointer; background: #edf2ee; color: var(--text-muted); border: 1px solid transparent; white-space: nowrap; transition: 0.15s; }
+    .chip.active { background: var(--primary); color: #ffffff; }
+
     .pos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-bottom: 16px; }
     .pos-item-card { background: #fafcfa; border: 1.5px solid var(--border-subtle); border-radius: 12px; padding: 12px; cursor: pointer; text-align: center; transition: 0.15s; }
     .pos-item-card:active { transform: scale(0.96); }
@@ -179,6 +190,17 @@
           <h2>🛒 แตะเลือกสินค้าที่ต้องการขาย</h2>
         </div>
         
+        <!-- ตัวค้นหาและตัวกรองสำหรับหน้าขาย -->
+        <div class="filter-wrapper">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" class="search-input" id="posSearchInput" placeholder="ค้นหาชื่อต้นกล้า..." oninput="filterPosProducts()">
+          </div>
+          <div class="chips-bar" id="posCategoryChips">
+            <div class="chip active" onclick="setPosFilterCategory('all')">ทั้งหมด</div>
+          </div>
+        </div>
+
         <div class="pos-grid" id="posGridContainer">
           <div class="empty-text">กำลังโหลดรายการต้นกล้า...</div>
         </div>
@@ -230,11 +252,24 @@
         <div class="card-header">
           <h2>📋 ข้อมูลสต็อกสินค้า & วันหมดอายุ</h2>
         </div>
+        
+        <!-- ตัวค้นหาและตัวกรองสำหรับหน้าคลังสต็อก -->
+        <div class="filter-wrapper">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" class="search-input" id="stockSearchInput" placeholder="ค้นหาชื่อสินค้าในคลัง..." oninput="filterStockTable()">
+          </div>
+          <div class="chips-bar" id="stockCategoryChips">
+            <div class="chip active" onclick="setStockFilterCategory('all')">ทั้งหมด</div>
+          </div>
+        </div>
+
         <div class="table-container">
           <table>
             <thead>
               <tr>
                 <th>ชื่อสินค้า</th>
+                <th>ประเภท</th>
                 <th>ราคา</th>
                 <th>คงเหลือ</th>
                 <th>วันหมดอายุ/ควรปลูกก่อน</th>
@@ -243,7 +278,7 @@
               </tr>
             </thead>
             <tbody id="productTableBody">
-              <tr><td colspan="6" class="empty-text">กำลังโหลดข้อมูล...</td></tr>
+              <tr><td colspan="7" class="empty-text">กำลังโหลดข้อมูล...</td></tr>
             </tbody>
           </table>
         </div>
@@ -295,12 +330,11 @@
             <input type="text" id="pName" placeholder="เช่น กล้าพริกขี้หนู, เมล็ดมะเขือเปราะ">
           </div>
           <div class="form-group">
-            <label>ประเภท</label>
+            <label>ประเภท (เช่น ต้นกล้า, เมล็ด, ปุ๋ย)</label>
             <input type="text" id="pType" value="ต้นกล้า">
           </div>
         </div>
 
-        <!-- ช่องระบุวันหมดอายุ / ควรปลูกก่อน -->
         <div class="form-row" style="background: #f7faf8; padding: 12px; border-radius: 10px; border: 1.5px dashed var(--accent);">
           <div class="form-group" style="flex: 1;">
             <label>⏳ วันหมดอายุ / ควรย้ายปลูกก่อน (ระบุหรือไม่ก็ได้)</label>
@@ -432,6 +466,10 @@
   let activeShopId = null;
   let currentProducts = [];
   let currentAuthMode = 'login';
+
+  // ตัวแปรสำหรับฟิลเตอร์
+  let activePosCategory = 'all';
+  let activeStockCategory = 'all';
 
   window.onload = function() {
     runCalculator();
@@ -614,7 +652,6 @@
     loadShops();
   }
 
-  // คำนวณวันหมดอายุ และสถานะความพร้อมจำหน่าย
   function calculateExpiry(expDateStr) {
     if (!expDateStr) {
       return { 
@@ -663,7 +700,7 @@
     const posGrid = document.getElementById('posGridContainer');
 
     if (!activeShopId) {
-      tbody.innerHTML = '<tr><td colspan="6" class="empty-text">กรุณาสร้างหรือเลือกร้านค้าก่อน</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-text">กรุณาสร้างหรือเลือกร้านค้าก่อน</td></tr>';
       posGrid.innerHTML = '<div class="empty-text">กรุณาสร้างหรือเลือกร้านค้าก่อน</div>';
       sellSelect.innerHTML = '<option value="">-- เลือกร้านค้าก่อน --</option>';
       adjSelect.innerHTML = '<option value="">-- เลือกร้านค้าก่อน --</option>';
@@ -673,30 +710,134 @@
 
     const { data, error } = await sb.from('products').select('*').eq('shop_id', activeShopId).order('id', { ascending: false });
     if (error) {
-      tbody.innerHTML = `<tr><td colspan="6" class="empty-text">เกิดข้อผิดพลาด: ${error.message}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" class="empty-text">เกิดข้อผิดพลาด: ${error.message}</td></tr>`;
       return;
     }
 
     currentProducts = data || [];
     sellSelect.innerHTML = '<option value="">-- เลือกสินค้า --</option>';
     adjSelect.innerHTML = '<option value="">-- เลือกสินค้า --</option>';
-    posGrid.innerHTML = '';
 
     if (!data || data.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" class="empty-text">ยังไม่มีสินค้าในร้านนี้</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-text">ยังไม่มีสินค้าในร้านนี้</td></tr>';
       posGrid.innerHTML = '<div class="empty-text">ยังไม่มีรายการสินค้าในระบบ</div>';
       updateStats();
       return;
     }
 
-    tbody.innerHTML = '';
+    // ตัวเลือกปรับสต็อก & ตัวเลือกขาย
     data.forEach(p => {
+      const adjOpt = document.createElement('option');
+      adjOpt.value = p.id;
+      adjOpt.textContent = `${p.name} (คงเหลือ: ${p.stock} ${p.unit || ''})`;
+      adjSelect.appendChild(adjOpt);
+
+      if (p.stock > 0) {
+        const sellOpt = document.createElement('option');
+        sellOpt.value = p.id;
+        sellOpt.textContent = `${p.name} (คงเหลือ: ${p.stock} ${p.unit || ''} | ${p.price} บ.)`;
+        sellSelect.appendChild(sellOpt);
+      }
+    });
+
+    renderCategoryChips();
+    filterPosProducts();
+    filterStockTable();
+    updateSaleCalc();
+    updateStats();
+  }
+
+  // สร้างปุ่มชิปตัวกรองหมวดหมู่แบบไดนามิกตามประเภทที่มีจริง
+  function renderCategoryChips() {
+    const types = Array.from(new Set(currentProducts.map(p => p.type || 'ทั่วไป'))).filter(Boolean);
+
+    const posChips = document.getElementById('posCategoryChips');
+    const stockChips = document.getElementById('stockCategoryChips');
+
+    let htmlPos = `<div class="chip ${activePosCategory === 'all' ? 'active' : ''}" onclick="setPosFilterCategory('all')">ทั้งหมด</div>`;
+    let htmlStock = `<div class="chip ${activeStockCategory === 'all' ? 'active' : ''}" onclick="setStockFilterCategory('all')">ทั้งหมด</div>`;
+
+    types.forEach(t => {
+      htmlPos += `<div class="chip ${activePosCategory === t ? 'active' : ''}" onclick="setPosFilterCategory('${t}')">${t}</div>`;
+      htmlStock += `<div class="chip ${activeStockCategory === t ? 'active' : ''}" onclick="setStockFilterCategory('${t}')">${t}</div>`;
+    });
+
+    posChips.innerHTML = htmlPos;
+    stockChips.innerHTML = htmlStock;
+  }
+
+  function setPosFilterCategory(cat) {
+    activePosCategory = cat;
+    renderCategoryChips();
+    filterPosProducts();
+  }
+
+  function setStockFilterCategory(cat) {
+    activeStockCategory = cat;
+    renderCategoryChips();
+    filterStockTable();
+  }
+
+  // กรองการ์ดสินค้าหน้าร้าน (POS)
+  function filterPosProducts() {
+    const keyword = (document.getElementById('posSearchInput').value || '').trim().toLowerCase();
+    const posGrid = document.getElementById('posGridContainer');
+    posGrid.innerHTML = '';
+
+    const filtered = currentProducts.filter(p => {
+      if (p.stock <= 0) return false;
+      const matchName = (p.name || '').toLowerCase().includes(keyword);
+      const matchCat = activePosCategory === 'all' || (p.type || 'ทั่วไป') === activePosCategory;
+      return matchName && matchCat;
+    });
+
+    if (filtered.length === 0) {
+      posGrid.innerHTML = '<div class="empty-text">ไม่พบต้นกล้าที่ตรงกับการค้นหา</div>';
+      return;
+    }
+
+    filtered.forEach(p => {
+      const expInfo = calculateExpiry(p.expire_date);
+      const card = document.createElement('div');
+      card.className = 'pos-item-card';
+      card.id = `posCard_${p.id}`;
+      card.onclick = () => selectPosProduct(p.id);
+      card.innerHTML = `
+        <div style="font-size: 22px;">🌱</div>
+        <div class="pos-name">${p.name}</div>
+        <div class="pos-price">${Number(p.price).toLocaleString()} บ.</div>
+        <div class="pos-stock">เหลือ ${p.stock} ${p.unit || ''}</div>
+        <div>${expInfo.cardBadge}</div>
+      `;
+      posGrid.appendChild(card);
+    });
+  }
+
+  // กรองตารางคลังสินค้า (Stock Table)
+  function filterStockTable() {
+    const keyword = (document.getElementById('stockSearchInput').value || '').trim().toLowerCase();
+    const tbody = document.getElementById('productTableBody');
+    tbody.innerHTML = '';
+
+    const filtered = currentProducts.filter(p => {
+      const matchName = (p.name || '').toLowerCase().includes(keyword);
+      const matchCat = activeStockCategory === 'all' || (p.type || 'ทั่วไป') === activeStockCategory;
+      return matchName && matchCat;
+    });
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-text">ไม่พบรายการสินค้าที่ค้นหา</td></tr>';
+      return;
+    }
+
+    filtered.forEach(p => {
       const isLow = p.stock <= (p.low_stock_at || 0);
       const expInfo = calculateExpiry(p.expire_date);
 
       tbody.innerHTML += `
         <tr>
-          <td><strong>${p.name}</strong><br><small style="color: var(--text-muted);">${p.type || '-'}</small></td>
+          <td><strong>${p.name}</strong></td>
+          <td style="color: var(--text-muted);">${p.type || '-'}</td>
           <td><strong>${Number(p.price).toLocaleString()}</strong> บ.</td>
           <td><strong>${p.stock}</strong> <small>${p.unit || ''}</small> ${isLow ? '<span style="color:red; font-size:11px;">(ใกล้หมด)</span>' : ''}</td>
           <td>${expInfo.expText}</td>
@@ -706,36 +847,7 @@
           </td>
         </tr>
       `;
-
-      const adjOpt = document.createElement('option');
-      adjOpt.value = p.id;
-      adjOpt.textContent = `${p.name} (คงเหลือ: ${p.stock} ${p.unit || ''})`;
-      adjSelect.appendChild(adjOpt);
-
-      // สินค้าที่จะโชว์ให้ขาย: มีสต็อก > 0
-      if (p.stock > 0) {
-        const sellOpt = document.createElement('option');
-        sellOpt.value = p.id;
-        sellOpt.textContent = `${p.name} (คงเหลือ: ${p.stock} ${p.unit || ''} | ${p.price} บ.) ${expInfo.isExpired ? '[หมดอายุ]' : ''}`;
-        sellSelect.appendChild(sellOpt);
-
-        const card = document.createElement('div');
-        card.className = 'pos-item-card';
-        card.id = `posCard_${p.id}`;
-        card.onclick = () => selectPosProduct(p.id);
-        card.innerHTML = `
-          <div style="font-size: 22px;">🌱</div>
-          <div class="pos-name">${p.name}</div>
-          <div class="pos-price">${Number(p.price).toLocaleString()} บ.</div>
-          <div class="pos-stock">เหลือ ${p.stock} ${p.unit || ''}</div>
-          <div>${expInfo.cardBadge}</div>
-        `;
-        posGrid.appendChild(card);
-      }
     });
-
-    updateSaleCalc();
-    updateStats();
   }
 
   function selectPosProduct(pId) {
@@ -762,12 +874,9 @@
     let lowCount = 0;
     
     currentProducts.forEach(p => {
-      // 1. เช็กสต็อกต่ำ
       if (p.stock <= (p.low_stock_at || 0)) {
         lowCount++;
       }
-
-      // 2. เช็กสินค้าพร้อมจำหน่ายทันที (มีสต็อก > 0 และยังไม่หมดอายุ)
       if (p.stock > 0) {
         const expInfo = calculateExpiry(p.expire_date);
         if (!expInfo.isExpired) {
