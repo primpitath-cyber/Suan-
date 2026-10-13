@@ -1,0 +1,63 @@
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>สวนพร้อม</title>
+<style>
+body{font-family:system-ui,sans-serif;background:#f3f7ef;color:#233b2a;margin:0;padding:20px}
+main{max-width:650px;margin:auto}
+header{background:#276749;color:white;padding:22px;border-radius:18px}
+section{background:white;padding:18px;margin-top:16px;border-radius:14px;box-shadow:0 2px 8px #0001}
+input,button{box-sizing:border-box;width:100%;padding:12px;margin-top:9px;border:1px solid #ccd8c9;border-radius:9px;font-size:16px}
+button{background:#276749;color:white;border:0;font-weight:bold}
+.small{font-size:13px;color:#5e7060}
+</style>
+</head>
+<body>
+<main>
+<header>
+<h1>🌱 สวนพร้อม</h1>
+<p>ระบบจัดการร้านต้นกล้าและการขาย</p>
+</header>
+<section>
+<h2>เริ่มต้นใช้งาน</h2>
+<p>ขั้นตอนแรก เราจะเตรียมหน้าร้านของคุณก่อน</p>
+<label>ชื่อสวน / ชื่อร้าน</label>
+<input id="shop" placeholder="เช่น สวนพร้อม">
+<label>ชื่อผู้ดูแล</label>
+<input id="owner" placeholder="ชื่อเจ้าของร้าน">
+<button onclick="save()">บันทึกข้อมูลในเครื่องนี้</button>
+<p id="result" class="small"></p>
+</section>
+<section>
+<h2>🌿 คำนวณจำนวนต้นกล้า</h2>
+<label>พื้นที่ปลูก (ตารางเมตร)</label>
+<input id="area" type="number" min="0" placeholder="เช่น 100">
+<label>ระยะห่างระหว่างต้น (เมตร)</label>
+<input id="spacing" type="number" min="0.01" step="0.01" placeholder="เช่น 0.5">
+<label>ระยะห่างระหว่างแถว (เมตร)</label>
+<input id="row" type="number" min="0.01" step="0.01" placeholder="เช่น 1">
+<button onclick="calc()">คำนวณจำนวนต้น</button>
+<p id="answer"></p>
+</section>
+<p class="small">เวอร์ชันทดลอง: ข้อมูลยังไม่เชื่อมกับฐานข้อมูลออนไลน์</p>
+</main>
+<script>
+function save(){
+const s=document.getElementById('shop').value.trim();
+const o=document.getElementById('owner').value.trim();
+if(!s||!o){document.getElementById('result').textContent='กรุณากรอกชื่อสวนและชื่อผู้ดูแล';return;}
+document.getElementById('result').textContent='บันทึกข้อมูลเบื้องต้นแล้ว: '+s+' — '+o;
+}
+function calc(){
+const a=Number(document.getElementById('area').value);
+const s=Number(document.getElementById('spacing').value);
+const r=Number(document.getElementById('row').value);
+if(a<=0||s<=0||r<=0){document.getElementById('answer').textContent='กรุณากรอกตัวเลขให้ถูกต้อง';return;}
+document.getElementById('answer').textContent='ควรเตรียมประมาณ '+Math.ceil(a/(s*r))+' ต้น';
+}
+</script>
+</body>
+</html>
