@@ -51,23 +51,7 @@
 <div class="container">
   <h1>🌱 สวนพร้อม (Suan-Prom)</h1>
 
-  <!-- 1. การเชื่อมต่อ Supabase -->
-  <div class="card" id="settingsCard">
-    <h2>🔌 เชื่อมต่อ Supabase</h2>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Project URL</label>
-        <input type="text" id="sbUrl" placeholder="https://xxxx.supabase.co">
-      </div>
-      <div class="form-group">
-        <label>Publishable Key</label>
-        <input type="password" id="sbKey" placeholder="anon key">
-      </div>
-    </div>
-    <button class="btn" onclick="saveAndConnect()">เชื่อมต่อฐานข้อมูล</button>
-  </div>
-
-  <!-- 2. เลือกร้านค้า -->
+  <!-- 1. เลือกร้านค้า -->
   <div class="card">
     <h2>🏡 ข้อมูลร้านค้า</h2>
     <div class="form-row">
@@ -89,7 +73,7 @@
     </div>
   </div>
 
-  <!-- 3. เมนูขายหน้าร้าน (POS) -->
+  <!-- 2. เมนูขายหน้าร้าน (POS) -->
   <div class="card" style="border: 2px solid var(--primary-light);">
     <h2>🛒 บันทึกการขายหน้าร้าน (ตัดสต็อกทันที)</h2>
     <div class="form-row">
@@ -108,7 +92,7 @@
     <button class="btn btn-sell" onclick="submitSale()">💰 บันทึกการขายและตัดสต็อก</button>
   </div>
 
-  <!-- 4. ปรับปรุงสต็อก (รับเข้า / คัดทิ้ง) -->
+  <!-- 3. ปรับปรุงสต็อก (รับเข้า / คัดทิ้ง) -->
   <div class="card" style="border: 2px solid #a8dadc;">
     <h2>🔄 ปรับปรุงสต็อกสินค้า (รับเข้า / เสียหาย / คัดทิ้ง)</h2>
     <div class="form-row">
@@ -140,7 +124,7 @@
     <button class="btn btn-adjust" onclick="submitStockAdjustment()">📥 บันทึกการปรับสต็อก</button>
   </div>
 
-  <!-- 5. เพิ่ม / แก้ไขสินค้า -->
+  <!-- 4. เพิ่ม / แก้ไขสินค้า -->
   <div class="card" id="productFormCard">
     <h2 id="productFormTitle">📦 เพิ่มสินค้า / ต้นกล้าใหม่</h2>
     <input type="hidden" id="editingProductId" value="">
@@ -183,7 +167,7 @@
     </div>
   </div>
 
-  <!-- 6. รายการสินค้าและสต็อกคงเหลือ -->
+  <!-- 5. รายการสินค้าและสต็อกคงเหลือ -->
   <div class="card">
     <h2>📋 สต็อกสินค้าคงเหลือ</h2>
     <div style="overflow-x: auto;">
@@ -205,7 +189,7 @@
     </div>
   </div>
 
-  <!-- 7. ประวัติการขายล่าสุด -->
+  <!-- 6. ประวัติการขายล่าสุด -->
   <div class="card">
     <h2>📜 ประวัติการขายล่าสุด (5 รายการ)</h2>
     <div style="overflow-x: auto;">
@@ -224,7 +208,7 @@
     </div>
   </div>
 
-  <!-- 8. เครื่องมือคำนวณถาดเพาะ -->
+  <!-- 7. เครื่องมือคำนวณถาดเพาะ -->
   <div class="card">
     <h2>🔢 คำนวณจำนวนต้นกล้า</h2>
     <div class="form-row">
@@ -242,49 +226,26 @@
 </div>
 
 <script>
+  // ค่าการเชื่อมต่อ Supabase ฝังไว้ในโค้ดเรียบร้อยแล้ว
+  const SB_URL = 'https://slrczkvhogdvexwonyiw.supabase.co';
+  const SB_KEY = 'Sb_publishable_J9Nd6MCpIxs6IQfyVI6lkQ_vNPJWZJk';
+
   let sb = null;
   let activeShopId = null;
   let currentProducts = [];
 
-  function cleanUrl(url) {
-    if (!url) return '';
-    return url.trim().replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
-  }
-
   window.onload = function() {
-    let url = localStorage.getItem('sp_sb_url');
-    const key = localStorage.getItem('sp_sb_key');
-    if (url) {
-      url = cleanUrl(url);
-      localStorage.setItem('sp_sb_url', url);
-    }
-    if (url && key) {
-      document.getElementById('sbUrl').value = url;
-      document.getElementById('sbKey').value = key;
-      initSupabase(url, key);
-    }
+    initSupabase();
     runCalculator();
   };
 
-  function initSupabase(url, key) {
+  function initSupabase() {
     try {
-      sb = supabase.createClient(cleanUrl(url), key);
+      sb = supabase.createClient(SB_URL, SB_KEY);
       loadShops();
     } catch (e) {
       alert('เชื่อมต่อไม่สำเร็จ: ' + e.message);
     }
-  }
-
-  function saveAndConnect() {
-    let url = document.getElementById('sbUrl').value.trim();
-    const key = document.getElementById('sbKey').value.trim();
-    if (!url || !key) return alert('กรุณากรอก URL และ Key');
-    url = cleanUrl(url);
-    document.getElementById('sbUrl').value = url;
-    localStorage.setItem('sp_sb_url', url);
-    localStorage.setItem('sp_sb_key', key);
-    initSupabase(url, key);
-    alert('บันทึกการตั้งค่าแล้ว');
   }
 
   async function loadShops() {
@@ -414,9 +375,7 @@
     document.getElementById('pCost').value = p.cost || 0;
     document.getElementById('pLowStock').value = p.low_stock_at || 20;
 
-    // ซ่อนช่องสต็อกตั้งต้นระหว่างแก้ไขข้อมูลทั่วไป เพื่อไม่ให้ยอดสต็อกจริงเพี้ยน
     document.getElementById('stockInputGroup').style.display = 'none';
-
     document.getElementById('productFormTitle').innerText = `✏️ แก้ไขข้อมูล: ${p.name}`;
     
     const actions = document.getElementById('formActionButtons');
@@ -462,7 +421,6 @@
     if (!name) return alert('กรุณาใส่ชื่อสินค้า');
 
     if (editId) {
-      // โหมดแก้ไขสินค้าเดิม
       const { error } = await sb.from('products').update({
         name,
         type,
@@ -479,7 +437,6 @@
       resetProductForm();
       loadProducts();
     } else {
-      // โหมดเพิ่มสินค้าใหม่
       const stock = parseInt(document.getElementById('pStock').value) || 0;
       const { error } = await sb.from('products').insert([{
         shop_id: activeShopId,
