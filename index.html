@@ -46,6 +46,8 @@
     .total-box { font-size: 20px; font-weight: bold; color: var(--danger); text-align: right; margin: 10px 0; }
     .user-bar { display: flex; justify-content: space-between; align-items: center; background: #e8f5e9; padding: 10px 16px; border-radius: 12px; margin-bottom: 16px; font-size: 14px; }
     .btn-logout { background: #e63946; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+    .remember-container { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 14px; cursor: pointer; }
+    .remember-container input { width: auto; margin: 0; }
   </style>
 </head>
 <body>
@@ -62,19 +64,22 @@
     </div>
     <div class="form-group">
       <label>รหัสผ่าน</label>
-      <input type="password" id="authPassword" placeholder="รหัสผ่านอย่างน้อย 6 ตัวอักษร">
+      <input type="password" id="authPassword" placeholder="รหัสผ่าน">
     </div>
+    <label class="remember-container">
+      <input type="checkbox" id="rememberMe" checked>
+      <span>จดจำการเข้าสู่ระบบในเครื่องนี้</span>
+    </label>
     <div style="display: flex; gap: 10px; margin-top: 20px;">
       <button class="btn" onclick="handleLogin()">เข้าสู่ระบบ</button>
       <button class="btn btn-secondary" onclick="handleSignUp()">สมัครสมาชิก</button>
     </div>
   </div>
 
-  <!-- ส่วนที่ 2: เนื้อหาร้านค้าทั้งหมด (แสดงเฉพาะคนล็อกอินแล้ว) -->
+  <!-- ส่วนที่ 2: เนื้อหาร้านค้าทั้งหมด (เปิดค้างไว้ตลอดเมื่อมี Session) -->
   <div id="appContent" style="display: none;">
-    <!-- แถบแสดงสถานะบัญชี -->
     <div class="user-bar">
-      <span>👤 เข้าสู่ระบบ: <strong id="userEmailText">-</strong></span>
+      <span>👤 บัญชี: <strong id="userEmailText">-</strong></span>
       <button class="btn-logout" onclick="handleLogout()">ออกจากระบบ</button>
     </div>
 
@@ -257,23 +262,40 @@
   const SB_URL = 'https://slrczkvhogdvexwonyiw.supabase.co';
   const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNscmN6a3Zob2dkdmV4d29ueWl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjAyMjksImV4cCI6MjEwNzQzNjIyOX0.Xy2cgZxc4fSD71tm5Rs_JCfFWleBJdr49dmt1qX3Xyo';
 
-  const sb = supabase.createClient(SB_URL, SB_KEY);
+  // ตั้งค่าให้บันทึก Session ถาวรลงใน LocalStorage ของ iPad อัตโนมัติ
+  const sb = supabase.createClient(SB_URL, SB_KEY, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    }
+  });
+
   let currentUser = null;
   let activeShopId = null;
   let currentProducts = [];
 
   window.onload = function() {
     runCalculator();
-    checkAuthSession();
+    initAuthListener();
   };
 
-  async function checkAuthSession() {
-    const { data: { session } } = await sb.auth.getSession();
-    if (session && session.user) {
-      currentUser = session.user;
-      showApp();
-    } else {
-      showAuth();
+  // ดักจับและจดจำการล็อกอินทันทีที่เปิดหน้าเว็บ
+  function initAuthListener() {
+    sb.auth.onAuthStateChange((event, session) => {
+      if (session && session.user) {
+        currentUser = session.user;
+        showApp();
+      } else {
+        currentUser = null;
+        showAuth();
+      }
+    });
+
+    // ดึงอีเมลล่าสุดที่เคยกรอกมาใส่ให้ทันทีเพื่อความสะดวก
+    const savedEmail = localStorage.getItem('sp_saved_email');
+    if (savedEmail) {
+      document.getElementById('authEmail').value = savedEmail;
     }
   }
 
@@ -298,9 +320,11 @@
     const { data, error } = await sb.auth.signUp({ email, password });
     if (error) return alert('สมัครไม่สำเร็จ: ' + error.message);
 
+    if (document.getElementById('rememberMe').checked) {
+      localStorage.setItem('sp_saved_email', email);
+    }
+
     alert('สมัครสมาชิกสำเร็จ!');
-    currentUser = data.user;
-    showApp();
   }
 
   async function handleLogin() {
@@ -311,12 +335,16 @@
     const { data, error } = await sb.auth.signInWithPassword({ email, password });
     if (error) return alert('เข้าสู่ระบบไม่สำเร็จ: ' + error.message);
 
-    currentUser = data.user;
-    showApp();
+    if (document.getElementById('rememberMe').checked) {
+      localStorage.setItem('sp_saved_email', email);
+    } else {
+      localStorage.removeItem('sp_saved_email');
+    }
   }
 
   async function handleLogout() {
     await sb.auth.signOut();
+    localStorage.removeItem('sp_user_active_shop');
     currentUser = null;
     activeShopId = null;
     showAuth();
