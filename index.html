@@ -55,16 +55,16 @@
 <div class="container">
   <h1>🌱 สวนพร้อม (Suan-Prom)</h1>
 
-  <!-- ส่วนที่ 1: กล่องเข้าสู่ระบบ / สมัครสมาชิก -->
+  <!-- กล่องเข้าสู่ระบบ / สมัครสมาชิก -->
   <div class="card" id="authCard" style="max-width: 450px; margin: 40px auto;">
     <h2>🔐 เข้าสู่ระบบบัญชีส่วนตัว</h2>
     <div class="form-group">
-      <label>อีเมล</label>
-      <input type="email" id="authEmail" placeholder="เช่น yourname@gmail.com">
+      <label>อีเมล (เมลมหาวิทยาลัย หรือ Gmail ทั่วไป)</label>
+      <input type="email" id="authEmail" placeholder="เช่น student@university.ac.th">
     </div>
     <div class="form-group">
       <label>รหัสผ่าน</label>
-      <input type="password" id="authPassword" placeholder="รหัสผ่าน">
+      <input type="password" id="authPassword" placeholder="รหัสผ่านอย่างน้อย 6 ตัวอักษร">
     </div>
     <label class="remember-container">
       <input type="checkbox" id="rememberMe" checked>
@@ -72,11 +72,11 @@
     </label>
     <div style="display: flex; gap: 10px; margin-top: 20px;">
       <button class="btn" onclick="handleLogin()">เข้าสู่ระบบ</button>
-      <button class="btn btn-secondary" onclick="handleSignUp()">สมัครสมาชิก</button>
+      <button class="btn btn-secondary" onclick="handleInstantSignUp()">สมัครสมาชิกทันที</button>
     </div>
   </div>
 
-  <!-- ส่วนที่ 2: เนื้อหาร้านค้าทั้งหมด (เปิดค้างไว้ตลอดเมื่อมี Session) -->
+  <!-- หน้าร้านค้า (แสดงเมื่อล็อกอินแล้ว) -->
   <div id="appContent" style="display: none;">
     <div class="user-bar">
       <span>👤 บัญชี: <strong id="userEmailText">-</strong></span>
@@ -184,11 +184,11 @@
           <input type="number" id="pCost" placeholder="เช่น 7">
         </div>
       </div>
+      <div class="form-row" id="stockInputGroup">
+        <label>จำนวนสต็อกตั้งต้น</label>
+        <input type="number" id="pStock" value="0">
+      </div>
       <div class="form-row">
-        <div class="form-group" id="stockInputGroup">
-          <label>จำนวนสต็อกตั้งต้น</label>
-          <input type="number" id="pStock" value="0">
-        </div>
         <div class="form-group">
           <label>เตือนสต็อกต่ำเมื่อเหลือน้อยกว่า</label>
           <input type="number" id="pLowStock" value="20">
@@ -262,7 +262,6 @@
   const SB_URL = 'https://slrczkvhogdvexwonyiw.supabase.co';
   const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNscmN6a3Zob2dkdmV4d29ueWl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjAyMjksImV4cCI6MjEwNzQzNjIyOX0.Xy2cgZxc4fSD71tm5Rs_JCfFWleBJdr49dmt1qX3Xyo';
 
-  // ตั้งค่าให้บันทึก Session ถาวรลงใน LocalStorage ของ iPad อัตโนมัติ
   const sb = supabase.createClient(SB_URL, SB_KEY, {
     auth: {
       persistSession: true,
@@ -280,7 +279,6 @@
     initAuthListener();
   };
 
-  // ดักจับและจดจำการล็อกอินทันทีที่เปิดหน้าเว็บ
   function initAuthListener() {
     sb.auth.onAuthStateChange((event, session) => {
       if (session && session.user) {
@@ -292,7 +290,6 @@
       }
     });
 
-    // ดึงอีเมลล่าสุดที่เคยกรอกมาใส่ให้ทันทีเพื่อความสะดวก
     const savedEmail = localStorage.getItem('sp_saved_email');
     if (savedEmail) {
       document.getElementById('authEmail').value = savedEmail;
@@ -311,20 +308,38 @@
     loadShops();
   }
 
-  async function handleSignUp() {
+  // สมัครสมาชิกแบบตรงเข้า DB ทันที ไม่ผ่านระบบส่งเมลของ Supabase (แก้ rate limit ขาด 100%)
+  async function handleInstantSignUp() {
     const email = document.getElementById('authEmail').value.trim();
     const password = document.getElementById('authPassword').value.trim();
     if (!email || !password) return alert('กรุณากรอกอีเมลและรหัสผ่าน');
     if (password.length < 6) return alert('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');
 
-    const { data, error } = await sb.auth.signUp({ email, password });
-    if (error) return alert('สมัครไม่สำเร็จ: ' + error.message);
+    const { data, error } = await sb.rpc('register_instant_user', {
+      user_email: email,
+      user_password: password
+    });
+
+    if (error) {
+      return alert('เกิดข้อผิดพลาดในการสมัคร: ' + error.message);
+    }
+
+    if (!data.success) {
+      return alert(data.message);
+    }
+
+    // สมัครสำเร็จ ให้ทำการล็อกอินทันที
+    const loginRes = await sb.auth.signInWithPassword({ email, password });
+    if (loginRes.error) {
+      alert('สมัครแล้วแต่ล็อกอินไม่สำเร็จ: ' + loginRes.error.message);
+      return;
+    }
 
     if (document.getElementById('rememberMe').checked) {
       localStorage.setItem('sp_saved_email', email);
     }
 
-    alert('สมัครสมาชิกสำเร็จ!');
+    alert('🎉 สมัครสมาชิกสำเร็จและเข้าสู่ระบบเรียบร้อย!');
   }
 
   async function handleLogin() {
