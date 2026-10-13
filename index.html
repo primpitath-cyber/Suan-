@@ -90,6 +90,11 @@
     input, select { width: 100%; padding: 11px 12px; border: 1.5px solid var(--border-subtle); border-radius: var(--radius-sm); font-size: 15px; outline: none; background: #fafbfc; transition: 0.2s; }
     input:focus, select:focus { border-color: var(--accent); background: #ffffff; }
 
+    /* ช่องรหัสผ่านพร้อมปุ่มดูรหัส */
+    .password-wrap { position: relative; }
+    .toggle-pwd-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 16px; color: var(--text-muted); padding: 4px; }
+    .pwd-status-text { font-size: 12px; margin-top: 5px; color: var(--text-muted); transition: 0.2s; }
+
     .btn { display: inline-flex; align-items: center; justify-content: center; width: 100%; background: var(--primary); color: #fff; border: none; padding: 13px; font-size: 15px; font-weight: 600; border-radius: var(--radius-sm); cursor: pointer; transition: 0.15s; gap: 6px; }
     .btn:active { transform: scale(0.98); opacity: 0.9; }
     .btn-sell { background: linear-gradient(135deg, #e76f51 0%, #d9534f 100%); }
@@ -114,8 +119,10 @@
     .auth-toggle { display: flex; background: #edf2ee; padding: 4px; border-radius: 12px; margin-bottom: 18px; }
     .auth-tab { flex: 1; text-align: center; padding: 9px; font-size: 14px; font-weight: 600; border-radius: 9px; cursor: pointer; color: var(--text-muted); }
     .auth-tab.active { background: #ffffff; color: var(--primary); box-shadow: var(--shadow-sm); }
-    .remember-container { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; color: var(--text-muted); cursor: pointer; }
-    .remember-container input { width: auto; margin: 0; }
+    
+    .auth-footer-links { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; font-size: 13px; color: var(--text-muted); }
+    .link-btn { background: none; border: none; color: var(--primary-light); cursor: pointer; font-size: 13px; text-decoration: underline; font-weight: 600; padding: 0; }
+
     .tab-content { display: none; }
     .tab-content.active { display: block; }
     .empty-text { text-align: center; color: #9aa89b; padding: 20px; font-size: 13px; }
@@ -125,7 +132,7 @@
 
 <div class="container">
 
-  <!-- กล่องเข้าสู่ระบบ / สมัครสมาชิก -->
+  <!-- กล่องเข้าสู่ระบบ / สมัครสมาชิก / ลืมรหัสผ่าน -->
   <div class="card" id="authCard" style="max-width: 440px; margin: 40px auto; padding: 26px;">
     <div style="text-align: center; margin-bottom: 20px;">
       <div style="font-size: 32px;">🌱</div>
@@ -133,27 +140,61 @@
       <p style="color: var(--text-muted); font-size: 13px;">ระบบจัดการร้านและสต็อกต้นกล้าอัจฉริยะ</p>
     </div>
 
-    <div class="auth-toggle">
-      <div class="auth-tab active" id="tabLogin" onclick="switchAuthMode('login')">เข้าสู่ระบบ</div>
-      <div class="auth-tab" id="tabSignUp" onclick="switchAuthMode('signup')">สมัครสมาชิกทันที</div>
+    <!-- ส่วนล็อกอินและสมัครสมาชิก -->
+    <div id="standardAuthView">
+      <div class="auth-toggle">
+        <div class="auth-tab active" id="tabLogin" onclick="switchAuthMode('login')">เข้าสู่ระบบ</div>
+        <div class="auth-tab" id="tabSignUp" onclick="switchAuthMode('signup')">สมัครสมาชิกทันที</div>
+      </div>
+
+      <div class="form-group">
+        <label>อีเมล (เมลมหาวิทยาลัย หรือ Gmail ทั่วไป)</label>
+        <input type="email" id="authEmail" placeholder="เช่น student@university.ac.th">
+      </div>
+      
+      <div class="form-group">
+        <label>รหัสผ่าน</label>
+        <div class="password-wrap">
+          <input type="password" id="authPassword" placeholder="รหัสผ่านอย่างน้อย 6 ตัวอักษร" oninput="checkPasswordStrength(this.value)" style="padding-right: 40px;">
+          <button type="button" class="toggle-pwd-btn" onclick="togglePasswordVisibility('authPassword', this)">👁️</button>
+        </div>
+        <div id="pwdHint" class="pwd-status-text">* รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร</div>
+      </div>
+
+      <div class="auth-footer-links">
+        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; margin: 0;">
+          <input type="checkbox" id="rememberMe" checked style="width: auto;">
+          <span>จดจำการเข้าสู่ระบบ</span>
+        </label>
+        <button type="button" class="link-btn" onclick="showForgotPasswordView()">ลืมรหัสผ่าน?</button>
+      </div>
+
+      <div style="margin-top: 20px;">
+        <button class="btn" id="authSubmitBtn" onclick="submitAuth()">เข้าสู่ระบบ</button>
+      </div>
     </div>
 
-    <div class="form-group">
-      <label>อีเมล (เมลมหาวิทยาลัย หรือ Gmail ทั่วไป)</label>
-      <input type="email" id="authEmail" placeholder="เช่น student@university.ac.th">
+    <!-- ส่วนตั้งรหัสผ่านใหม่ (Reset Password View) -->
+    <div id="forgotPasswordView" style="display: none;">
+      <h2 style="font-size: 16px; color: var(--primary); margin-bottom: 14px; text-align: center;">🔑 ตั้งรหัสผ่านใหม่ทันที</h2>
+      <div class="form-group">
+        <label>ระบุอีเมลบัญชีของคุณ</label>
+        <input type="email" id="resetEmail" placeholder="เช่น student@university.ac.th">
+      </div>
+      <div class="form-group">
+        <label>รหัสผ่านใหม่</label>
+        <div class="password-wrap">
+          <input type="password" id="resetNewPassword" placeholder="รหัสผ่านใหม่อย่างน้อย 6 ตัวอักษร" oninput="checkResetPasswordStrength(this.value)" style="padding-right: 40px;">
+          <button type="button" class="toggle-pwd-btn" onclick="togglePasswordVisibility('resetNewPassword', this)">👁️</button>
+        </div>
+        <div id="resetPwdHint" class="pwd-status-text">* รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร</div>
+      </div>
+      <div style="margin-top: 18px; display: flex; gap: 10px;">
+        <button class="btn" style="flex: 2; background: var(--info);" onclick="handleInstantPasswordReset()">ยืนยันเปลี่ยนรหัสผ่าน</button>
+        <button class="btn" style="flex: 1; background: #6c757d;" onclick="hideForgotPasswordView()">ย้อนกลับ</button>
+      </div>
     </div>
-    <div class="form-group">
-      <label>รหัสผ่าน</label>
-      <input type="password" id="authPassword" placeholder="รหัสผ่านอย่างน้อย 6 ตัวอักษร">
-    </div>
-    <label class="remember-container">
-      <input type="checkbox" id="rememberMe" checked>
-      <span>จดจำการเข้าสู่ระบบในอุปกรณ์นี้</span>
-    </label>
 
-    <div style="margin-top: 20px;">
-      <button class="btn" id="authSubmitBtn" onclick="submitAuth()">เข้าสู่ระบบ</button>
-    </div>
   </div>
 
   <!-- โครงสร้างแอปเมื่อล็อกอิน -->
@@ -190,7 +231,6 @@
           <h2>🛒 แตะเลือกสินค้าที่ต้องการขาย</h2>
         </div>
         
-        <!-- ตัวค้นหาและตัวกรองสำหรับหน้าขาย -->
         <div class="filter-wrapper">
           <div class="search-box">
             <span class="search-icon">🔍</span>
@@ -253,7 +293,6 @@
           <h2>📋 ข้อมูลสต็อกสินค้า & วันหมดอายุ</h2>
         </div>
         
-        <!-- ตัวค้นหาและตัวกรองสำหรับหน้าคลังสต็อก -->
         <div class="filter-wrapper">
           <div class="search-box">
             <span class="search-icon">🔍</span>
@@ -284,7 +323,6 @@
         </div>
       </div>
 
-      <!-- ปรับปรุงสต็อก -->
       <div class="card" style="border-top: 4px solid var(--info);">
         <div class="card-header">
           <h2>🔄 ปรับปรุงสต็อก (รับเข้า / เสียหาย / คัดทิ้ง)</h2>
@@ -318,7 +356,6 @@
         <button class="btn btn-adjust" onclick="submitStockAdjustment()">📥 บันทึกการปรับสต็อก</button>
       </div>
 
-      <!-- เพิ่ม / แก้ไขสินค้า พร้อมระบบวันหมดอายุ -->
       <div class="card" id="productFormCard">
         <div class="card-header">
           <h2 id="productFormTitle">🌱 เพิ่มสินค้า / ต้นกล้าใหม่</h2>
@@ -467,7 +504,6 @@
   let currentProducts = [];
   let currentAuthMode = 'login';
 
-  // ตัวแปรสำหรับฟิลเตอร์
   let activePosCategory = 'all';
   let activeStockCategory = 'all';
 
@@ -475,6 +511,88 @@
     runCalculator();
     initAuthListener();
   };
+
+  // ตรวจสอบและแสดงข้อความเตือนรหัสผ่านหน้าล็อกอิน/สมัครสมาชิกแบบเรียลไทม์
+  function checkPasswordStrength(val) {
+    const hint = document.getElementById('pwdHint');
+    if (!hint) return;
+
+    if (val.length === 0) {
+      hint.innerText = '* รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร';
+      hint.style.color = 'var(--text-muted)';
+    } else if (val.length < 6) {
+      hint.innerText = `⚠️ รหัสผ่านสั้นเกินไป (ใส่แล้ว ${val.length}/6 ตัว)`;
+      hint.style.color = 'var(--danger)';
+    } else {
+      hint.innerText = `✅ รหัสผ่านถูกต้องและพร้อมใช้งาน (${val.length} ตัวอักษร)`;
+      hint.style.color = 'var(--primary-light)';
+    }
+  }
+
+  // ตรวจสอบสำหรับหน้ารีเซ็ตรหัสผ่านใหม่
+  function checkResetPasswordStrength(val) {
+    const hint = document.getElementById('resetPwdHint');
+    if (!hint) return;
+
+    if (val.length === 0) {
+      hint.innerText = '* รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร';
+      hint.style.color = 'var(--text-muted)';
+    } else if (val.length < 6) {
+      hint.innerText = `⚠️ รหัสผ่านสั้นเกินไป (ใส่แล้ว ${val.length}/6 ตัว)`;
+      hint.style.color = 'var(--danger)';
+    } else {
+      hint.innerText = `✅ รหัสผ่านใหม่ผ่านเกณฑ์ (${val.length} ตัวอักษร)`;
+      hint.style.color = 'var(--primary-light)';
+    }
+  }
+
+  // ฟังก์ชันสลับการมองเห็นรหัสผ่าน
+  function togglePasswordVisibility(inputId, btn) {
+    const field = document.getElementById(inputId);
+    if (field.type === 'password') {
+      field.type = 'text';
+      btn.innerText = '🙈';
+    } else {
+      field.type = 'password';
+      btn.innerText = '👁️';
+    }
+  }
+
+  // ฟังก์ชันสลับหน้าต่างลืมรหัสผ่าน
+  function showForgotPasswordView() {
+    document.getElementById('standardAuthView').style.display = 'none';
+    document.getElementById('forgotPasswordView').style.display = 'block';
+    document.getElementById('resetEmail').value = document.getElementById('authEmail').value;
+  }
+
+  function hideForgotPasswordView() {
+    document.getElementById('forgotPasswordView').style.display = 'none';
+    document.getElementById('standardAuthView').style.display = 'block';
+  }
+
+  // บันทึกรหัสผ่านใหม่ทันที
+  async function handleInstantPasswordReset() {
+    const email = document.getElementById('resetEmail').value.trim();
+    const newPassword = document.getElementById('resetNewPassword').value.trim();
+
+    if (!email) return alert('⚠️ กรุณากรอกอีเมลบัญชีของคุณ');
+    if (!newPassword) return alert('⚠️ กรุณากรอกรหัสผ่านใหม่');
+    if (newPassword.length < 6) return alert('⚠️ รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร');
+
+    const { data, error } = await sb.rpc('reset_instant_password', {
+      user_email: email,
+      new_password: newPassword
+    });
+
+    if (error) return alert('เกิดข้อผิดพลาด: ' + error.message);
+    if (!data.success) return alert(data.message);
+
+    alert('✅ เปลี่ยนรหัสผ่านใหม่สำเร็จแล้ว! ระบบกำลังเข้าสู่ระบบให้อัตโนมัติ');
+    document.getElementById('authEmail').value = email;
+    document.getElementById('authPassword').value = newPassword;
+    hideForgotPasswordView();
+    handleLogin();
+  }
 
   function switchTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -548,8 +666,9 @@
   async function handleInstantSignUp() {
     const email = document.getElementById('authEmail').value.trim();
     const password = document.getElementById('authPassword').value.trim();
-    if (!email || !password) return alert('กรุณากรอกอีเมลและรหัสผ่าน');
-    if (password.length < 6) return alert('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');
+    if (!email) return alert('⚠️ กรุณากรอกอีเมล');
+    if (!password) return alert('⚠️ กรุณากรอกรหัสผ่าน');
+    if (password.length < 6) return alert('⚠️ รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');
 
     const { data, error } = await sb.rpc('register_instant_user', {
       user_email: email,
@@ -571,10 +690,17 @@
   async function handleLogin() {
     const email = document.getElementById('authEmail').value.trim();
     const password = document.getElementById('authPassword').value.trim();
-    if (!email || !password) return alert('กรุณากรอกอีเมลและรหัสผ่าน');
+    if (!email) return alert('⚠️ กรุณากรอกอีเมล');
+    if (!password) return alert('⚠️ กรุณากรอกรหัสผ่าน');
+    if (password.length < 6) return alert('⚠️ รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');
 
     const { data, error } = await sb.auth.signInWithPassword({ email, password });
-    if (error) return alert('เข้าสู่ระบบไม่สำเร็จ: ' + error.message);
+    if (error) {
+      if (error.message.includes('Invalid login credentials')) {
+        return alert('❌ อีเมลหรือรหัสผ่านไม่ถูกต้อง (หากยังไม่เคยสมัคร ให้กดแท็บ "สมัครสมาชิกทันที" หรือกด "ลืมรหัสผ่าน?")');
+      }
+      return alert('เข้าสู่ระบบไม่สำเร็จ: ' + error.message);
+    }
 
     if (document.getElementById('rememberMe').checked) {
       localStorage.setItem('sp_saved_email', email);
@@ -725,7 +851,6 @@
       return;
     }
 
-    // ตัวเลือกปรับสต็อก & ตัวเลือกขาย
     data.forEach(p => {
       const adjOpt = document.createElement('option');
       adjOpt.value = p.id;
@@ -747,7 +872,6 @@
     updateStats();
   }
 
-  // สร้างปุ่มชิปตัวกรองหมวดหมู่แบบไดนามิกตามประเภทที่มีจริง
   function renderCategoryChips() {
     const types = Array.from(new Set(currentProducts.map(p => p.type || 'ทั่วไป'))).filter(Boolean);
 
@@ -778,7 +902,6 @@
     filterStockTable();
   }
 
-  // กรองการ์ดสินค้าหน้าร้าน (POS)
   function filterPosProducts() {
     const keyword = (document.getElementById('posSearchInput').value || '').trim().toLowerCase();
     const posGrid = document.getElementById('posGridContainer');
@@ -813,7 +936,6 @@
     });
   }
 
-  // กรองตารางคลังสินค้า (Stock Table)
   function filterStockTable() {
     const keyword = (document.getElementById('stockSearchInput').value || '').trim().toLowerCase();
     const tbody = document.getElementById('productTableBody');
