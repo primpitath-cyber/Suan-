@@ -19,7 +19,7 @@
     }
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: var(--bg); color: var(--text); margin: 0; padding: 16px; font-size: 16px; }
-    .container { max-width: 840px; margin: 0 auto; }
+    .container { max-width: 860px; margin: 0 auto; }
     h1 { color: var(--primary); text-align: center; margin-bottom: 20px; font-size: 26px; }
     h2 { font-size: 18px; margin-top: 0; padding-bottom: 8px; border-bottom: 2px solid var(--accent); color: var(--primary); }
     .card { background: var(--card); border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.04); }
@@ -34,6 +34,8 @@
     .btn-secondary { background: var(--primary-light); }
     .btn-sell { background: #e76f51; }
     .btn-adjust { background: #457b9d; }
+    .btn-edit-sm { background: #2a9d8f; color: white; border: none; padding: 8px 12px; font-size: 14px; border-radius: 8px; cursor: pointer; }
+    .btn-cancel { background: #6c757d; }
     .status-badge { padding: 4px 8px; border-radius: 6px; font-size: 13px; font-weight: bold; }
     .badge-success { background: #d4edda; color: #155724; }
     .badge-danger { background: #f8d7da; color: #721c24; }
@@ -138,9 +140,10 @@
     <button class="btn btn-adjust" onclick="submitStockAdjustment()">📥 บันทึกการปรับสต็อก</button>
   </div>
 
-  <!-- 5. เพิ่มสินค้าใหม่ -->
-  <div class="card">
-    <h2>📦 เพิ่มสินค้า / ต้นกล้าใหม่</h2>
+  <!-- 5. เพิ่ม / แก้ไขสินค้า -->
+  <div class="card" id="productFormCard">
+    <h2 id="productFormTitle">📦 เพิ่มสินค้า / ต้นกล้าใหม่</h2>
+    <input type="hidden" id="editingProductId" value="">
     <div class="form-row">
       <div class="form-group" style="flex: 2;">
         <label>ชื่อต้นกล้า / สินค้า</label>
@@ -166,7 +169,7 @@
       </div>
     </div>
     <div class="form-row">
-      <div class="form-group">
+      <div class="form-group" id="stockInputGroup">
         <label>จำนวนสต็อกตั้งต้น</label>
         <input type="number" id="pStock" value="0">
       </div>
@@ -175,7 +178,9 @@
         <input type="number" id="pLowStock" value="20">
       </div>
     </div>
-    <button class="btn" onclick="addNewProduct()">บันทึกเพิ่มสินค้า</button>
+    <div class="form-row" id="formActionButtons">
+      <button class="btn" id="saveProductBtn" onclick="saveProduct()">บันทึกเพิ่มสินค้า</button>
+    </div>
   </div>
 
   <!-- 6. รายการสินค้าและสต็อกคงเหลือ -->
@@ -190,10 +195,11 @@
             <th>ราคาขาย</th>
             <th>คงเหลือ</th>
             <th>สถานะ</th>
+            <th style="text-align: center;">จัดการ</th>
           </tr>
         </thead>
         <tbody id="productTableBody">
-          <tr><td colspan="5" class="empty-text">กรุณาเลือกร้านค้าเพื่อดูสต็อก</td></tr>
+          <tr><td colspan="6" class="empty-text">กรุณาเลือกร้านค้าเพื่อดูสต็อก</td></tr>
         </tbody>
       </table>
     </div>
@@ -334,6 +340,7 @@
   function switchShop() {
     activeShopId = document.getElementById('shopSelect').value;
     localStorage.setItem('sp_active_shop', activeShopId);
+    resetProductForm();
     loadProducts();
     loadRecentSales();
   }
@@ -343,7 +350,7 @@
     const sellSelect = document.getElementById('sellProductSelect');
     const adjSelect = document.getElementById('adjProductSelect');
     if (!sb || !activeShopId) {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty-text">กรุณาเลือกร้านค้า</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-text">กรุณาเลือกร้านค้า</td></tr>';
       sellSelect.innerHTML = '<option value="">-- เลือกร้านค้าก่อน --</option>';
       adjSelect.innerHTML = '<option value="">-- เลือกร้านค้าก่อน --</option>';
       return;
@@ -351,7 +358,7 @@
 
     const { data, error } = await sb.from('products').select('*').eq('shop_id', activeShopId).order('id', { ascending: false });
     if (error) {
-      tbody.innerHTML = `<tr><td colspan="5" class="empty-text">เกิดข้อผิดพลาด: ${error.message}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" class="empty-text">เกิดข้อผิดพลาด: ${error.message}</td></tr>`;
       return;
     }
 
@@ -360,7 +367,7 @@
     adjSelect.innerHTML = '<option value="">-- เลือกสินค้า --</option>';
 
     if (!data || data.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty-text">ยังไม่มีสินค้าในร้านนี้</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-text">ยังไม่มีสินค้าในร้านนี้</td></tr>';
       return;
     }
 
@@ -374,16 +381,17 @@
           <td>${Number(p.price).toLocaleString()} บ.</td>
           <td><strong>${p.stock}</strong> ${p.unit || ''}</td>
           <td><span class="status-badge ${isLow ? 'badge-danger' : 'badge-success'}">${isLow ? 'สต็อกต่ำ' : 'ปกติ'}</span></td>
+          <td style="text-align: center;">
+            <button class="btn-edit-sm" onclick="startEditProduct(${p.id})">✏️ แก้ไข</button>
+          </td>
         </tr>
       `;
 
-      // ตัวเลือกสำหรับปรับสต็อก (เลือกได้ทุกชิ้น)
       const adjOpt = document.createElement('option');
       adjOpt.value = p.id;
       adjOpt.textContent = `${p.name} (ปัจจุบัน: ${p.stock} ${p.unit || ''})`;
       adjSelect.appendChild(adjOpt);
 
-      // ตัวเลือกสำหรับขายหน้าร้าน (ต้องมีสต็อก > 0)
       if (p.stock > 0) {
         const sellOpt = document.createElement('option');
         sellOpt.value = p.id;
@@ -392,6 +400,98 @@
       }
     });
     updateSaleCalc();
+  }
+
+  function startEditProduct(id) {
+    const p = currentProducts.find(item => item.id === id);
+    if (!p) return;
+
+    document.getElementById('editingProductId').value = p.id;
+    document.getElementById('pName').value = p.name;
+    document.getElementById('pType').value = p.type || 'ต้นกล้า';
+    document.getElementById('pUnit').value = p.unit || 'ต้น';
+    document.getElementById('pPrice').value = p.price;
+    document.getElementById('pCost').value = p.cost || 0;
+    document.getElementById('pLowStock').value = p.low_stock_at || 20;
+
+    // ซ่อนช่องสต็อกตั้งต้นระหว่างแก้ไขข้อมูลทั่วไป เพื่อไม่ให้ยอดสต็อกจริงเพี้ยน
+    document.getElementById('stockInputGroup').style.display = 'none';
+
+    document.getElementById('productFormTitle').innerText = `✏️ แก้ไขข้อมูล: ${p.name}`;
+    
+    const actions = document.getElementById('formActionButtons');
+    actions.innerHTML = `
+      <div style="display: flex; gap: 10px; width: 100%;">
+        <button class="btn" style="flex: 2; background: #2a9d8f;" onclick="saveProduct()">💾 บันทึกการแก้ไข</button>
+        <button class="btn btn-cancel" style="flex: 1;" onclick="resetProductForm()">ยกเลิก</button>
+      </div>
+    `;
+
+    document.getElementById('productFormCard').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function resetProductForm() {
+    document.getElementById('editingProductId').value = '';
+    document.getElementById('pName').value = '';
+    document.getElementById('pType').value = 'ต้นกล้า';
+    document.getElementById('pUnit').value = 'ต้น';
+    document.getElementById('pPrice').value = '';
+    document.getElementById('pCost').value = '';
+    document.getElementById('pStock').value = '0';
+    document.getElementById('pLowStock').value = '20';
+    document.getElementById('stockInputGroup').style.display = 'block';
+
+    document.getElementById('productFormTitle').innerText = '📦 เพิ่มสินค้า / ต้นกล้าใหม่';
+    document.getElementById('formActionButtons').innerHTML = `
+      <button class="btn" id="saveProductBtn" onclick="saveProduct()">บันทึกเพิ่มสินค้า</button>
+    `;
+  }
+
+  async function saveProduct() {
+    if (!sb) return alert('กรุณาเชื่อมต่อ Supabase ก่อน');
+    if (!activeShopId) return alert('กรุณาเลือกร้านค้าก่อน');
+
+    const editId = document.getElementById('editingProductId').value;
+    const name = document.getElementById('pName').value.trim();
+    const type = document.getElementById('pType').value.trim();
+    const unit = document.getElementById('pUnit').value.trim();
+    const price = parseFloat(document.getElementById('pPrice').value) || 0;
+    const cost = parseFloat(document.getElementById('pCost').value) || 0;
+    const low_stock_at = parseInt(document.getElementById('pLowStock').value) || 0;
+
+    if (!name) return alert('กรุณาใส่ชื่อสินค้า');
+
+    if (editId) {
+      // โหมดแก้ไขสินค้าเดิม
+      const { error } = await sb.from('products').update({
+        name,
+        type,
+        unit,
+        price,
+        cost,
+        low_stock_at,
+        updated_at: new Date().toISOString()
+      }).eq('id', editId);
+
+      if (error) return alert('แก้ไขสินค้าไม่สำเร็จ: ' + error.message);
+
+      alert(`แก้ไขข้อมูล "${name}" เรียบร้อย!`);
+      resetProductForm();
+      loadProducts();
+    } else {
+      // โหมดเพิ่มสินค้าใหม่
+      const stock = parseInt(document.getElementById('pStock').value) || 0;
+      const { error } = await sb.from('products').insert([{
+        shop_id: activeShopId,
+        name, type, unit, price, cost, stock, low_stock_at, active: true
+      }]);
+
+      if (error) return alert('บันทึกสินค้าไม่สำเร็จ: ' + error.message);
+
+      alert('เพิ่มสินค้าเรียบร้อย!');
+      resetProductForm();
+      loadProducts();
+    }
   }
 
   function updateSaleCalc() {
@@ -526,35 +626,6 @@
         </tr>
       `;
     });
-  }
-
-  async function addNewProduct() {
-    if (!sb) return alert('กรุณาเชื่อมต่อ Supabase ก่อน');
-    if (!activeShopId) return alert('กรุณาเลือกร้านค้าก่อน');
-
-    const name = document.getElementById('pName').value.trim();
-    const type = document.getElementById('pType').value.trim();
-    const unit = document.getElementById('pUnit').value.trim();
-    const price = parseFloat(document.getElementById('pPrice').value) || 0;
-    const cost = parseFloat(document.getElementById('pCost').value) || 0;
-    const stock = parseInt(document.getElementById('pStock').value) || 0;
-    const low_stock_at = parseInt(document.getElementById('pLowStock').value) || 0;
-
-    if (!name) return alert('กรุณาใส่ชื่อสินค้า');
-
-    const { error } = await sb.from('products').insert([{
-      shop_id: activeShopId,
-      name, type, unit, price, cost, stock, low_stock_at, active: true
-    }]);
-
-    if (error) return alert('บันทึกสินค้าไม่สำเร็จ: ' + error.message);
-
-    alert('เพิ่มสินค้าเรียบร้อย!');
-    document.getElementById('pName').value = '';
-    document.getElementById('pPrice').value = '';
-    document.getElementById('pCost').value = '';
-    document.getElementById('pStock').value = '0';
-    loadProducts();
   }
 
   function runCalculator() {
