@@ -1,4 +1,4 @@
-      <!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="th">
 <head>
   <meta charset="UTF-8">
@@ -50,7 +50,7 @@
     <div class="form-row">
       <div class="form-group">
         <label>Project URL</label>
-        <input type="text" id="sbUrl" placeholder="https://xxxx.supabase.co">
+        <input type="text" id="sbUrl" placeholder="https://slrczkvhogdvexwonyiw.supabase.co">
       </div>
       <div class="form-group">
         <label>Publishable Key</label>
@@ -164,9 +164,18 @@
   let sb = null;
   let activeShopId = null;
 
+  function cleanUrl(url) {
+    if (!url) return '';
+    return url.trim().replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
+  }
+
   window.onload = function() {
-    const url = localStorage.getItem('sp_sb_url');
+    let url = localStorage.getItem('sp_sb_url');
     const key = localStorage.getItem('sp_sb_key');
+    if (url) {
+      url = cleanUrl(url);
+      localStorage.setItem('sp_sb_url', url);
+    }
     if (url && key) {
       document.getElementById('sbUrl').value = url;
       document.getElementById('sbKey').value = key;
@@ -177,7 +186,7 @@
 
   function initSupabase(url, key) {
     try {
-      sb = supabase.createClient(url, key);
+      sb = supabase.createClient(cleanUrl(url), key);
       loadShops();
     } catch (e) {
       alert('เชื่อมต่อไม่สำเร็จ: ' + e.message);
@@ -185,12 +194,14 @@
   }
 
   function saveAndConnect() {
-    const url = document.getElementById('sbUrl').value.trim();
+    let url = document.getElementById('sbUrl').value.trim();
     const key = document.getElementById('sbKey').value.trim();
     if (!url || !key) {
       alert('กรุณากรอก URL และ Key');
       return;
     }
+    url = cleanUrl(url);
+    document.getElementById('sbUrl').value = url;
     localStorage.setItem('sp_sb_url', url);
     localStorage.setItem('sp_sb_key', key);
     initSupabase(url, key);
@@ -233,15 +244,30 @@
     const name = document.getElementById('newShopName').value.trim();
     if (!name) return alert('กรุณาพิมพ์ชื่อร้าน');
 
-    const { data, error } = await sb.from('shops').insert([{ name }]).select().single();
-    if (error) {
-      alert('สร้างร้านไม่สำเร็จ: ' + error.message);
+    // 1. ลองเรียกฟังก์ชัน create_shop ของระบบก่อน
+    let res = await sb.rpc('create_shop', { shop_name: name });
+    
+    // 2. ถ้าชื่อตัวแปรเป็น name ให้ลองอีกแบบ
+    if (res.error) {
+      res = await sb.rpc('create_shop', { name: name });
+    }
+
+    // 3. ถ้าฟังก์ชันใช้ไม่ได้ จึงลอง insert ตรง
+    if (res.error) {
+      res = await sb.from('shops').insert([{ name }]).select().single();
+    }
+
+    if (res.error) {
+      alert('สร้างร้านไม่สำเร็จ: ' + res.error.message);
       return;
     }
 
+    const createdShopId = res.data?.id || (typeof res.data === 'string' ? res.data : null);
     document.getElementById('newShopName').value = '';
     alert('สร้างร้าน ' + name + ' สำเร็จ!');
-    localStorage.setItem('sp_active_shop', data.id);
+    if (createdShopId) {
+      localStorage.setItem('sp_active_shop', createdShopId);
+    }
     loadShops();
   }
 
