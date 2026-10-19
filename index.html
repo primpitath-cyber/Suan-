@@ -149,6 +149,21 @@ th, td {
   font-size: 13px !important;
 }
 </style>
+<style>
+/* Fix dashed container and inner inputs */
+div[style*="border"], div[class*="border"], fieldset, form div {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+input[type="text"], input[type="date"], input[type="number"], select {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+</style>
 </head>
 <body>
 
