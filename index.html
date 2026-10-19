@@ -241,6 +241,29 @@ input[type="text"], input[type="date"], input[type="number"], select {
   }
 </style>
 
+
+<style id="safari-date-reset">
+  /* ล้างสไตล์เริ่มต้นของ Safari สำหรับ input date */
+  input[type="date"]#pExpDate,
+  #pExpDate {
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+  }
+  
+  /* ตัวครอบเส้นประ */
+  div[style*="dashed"] {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    overflow: hidden !important;
+  }
+</style>
+
 </head>
 <body>
 
