@@ -164,6 +164,32 @@ input[type="text"], input[type="date"], input[type="number"], select {
   margin-right: 0 !important;
 }
 </style>
+
+<style id="table-full-fix">
+  /* บังคับตารางสินค้าให้กว้างเต็มการ์ด ไม่หดเข้าซ้าย */
+  table {
+    display: table !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    border-collapse: collapse !important;
+    margin-top: 10px !important;
+  }
+
+  table th, table td {
+    padding: 10px 6px !important;
+    font-size: 13px !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+  }
+
+  /* ตัวครอบตารางป้องกันหลุดจอ แต่รักษาความกว้างเต็มพื้นที่ */
+  .table-responsive, div:has(> table) {
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+</style>
+
 </head>
 <body>
 
