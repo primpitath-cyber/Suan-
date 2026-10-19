@@ -171,8 +171,11 @@ input[type="text"], input[type="date"], input[type="number"], select {
 
 
 
+
+
+
 <style id="perfect-suan-table">
-  /* บังคับคอนเทนเนอร์และตัวตารางให้กว้าง 100% เต็มพื้นที่การ์ด */
+  /* 1. คุมตารางให้ขยายเต็ม 100% และกระจายคอลัมน์สม่ำเสมอ */
   .table-container {
     width: 100% !important;
     display: block !important;
@@ -199,11 +202,30 @@ input[type="text"], input[type="date"], input[type="number"], select {
     white-space: normal !important;
   }
 
-  /* รักษากล่องวันหมดอายุไม่ให้ทะลุกรอบ */
-  #pExpDate {
+  /* 2. บังคับกล่องเส้นประและ input วันหมดอายุให้อยู่ในกรอบ ไม่ล้นขอบขวา */
+  div[style*="dashed"] {
     width: 100% !important;
     max-width: 100% !important;
     box-sizing: border-box !important;
+    overflow: hidden !important;
+    display: block !important;
+  }
+
+  div[style*="dashed"] .form-group {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  #pExpDate,
+  div[style*="dashed"] input {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    display: block !important;
+    margin: 0 !important;
   }
 </style>
 
