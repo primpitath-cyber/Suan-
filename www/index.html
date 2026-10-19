@@ -126,6 +126,44 @@
     .empty-text { text-align: center; color: #9aa89b; padding: 20px; font-size: 13px; }
   </style>
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+/* Fix input overflow & table responsiveness */
+*, *::before, *::after {
+  box-sizing: border-box !important;
+}
+
+input, select, textarea {
+  max-width: 100% !important;
+}
+
+.table-responsive, table {
+  width: 100% !important;
+  display: block !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  white-space: nowrap !important;
+}
+
+th, td {
+  padding: 8px 10px !important;
+  font-size: 13px !important;
+}
+</style>
+<style>
+/* Fix dashed container and inner inputs */
+div[style*="border"], div[class*="border"], fieldset, form div {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+input[type="text"], input[type="date"], input[type="number"], select {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+</style>
 </head>
 <body>
 
@@ -371,8 +409,8 @@
           </div>
         </div>
 
-        <div class="form-row" style="background: #f7faf8; padding: 12px; border-radius: 10px; border: 1.5px dashed var(--accent);">
-          <div class="form-group" style="flex: 1;">
+        <div style="background: #f7faf8; padding: 12px; border-radius: 10px; border: 1.5px dashed var(--accent); width: 100%; box-sizing: border-box; margin-bottom: 12px;">
+                <div class="form-group" style="width: 100%; margin: 0;">
             <label>⏳ วันหมดอายุ / ควรย้ายปลูกก่อน (ระบุหรือไม่ก็ได้)</label>
             <input type="date" id="pExpireDate">
           </div>
@@ -1251,5 +1289,39 @@
     document.getElementById('calcOutput').innerText = `${(trays * holes).toLocaleString()} ต้น`;
   }
 </script>
+
+<style id="permanent-box-fix">
+  /* บังคับให้ container เส้นประ และ input ภายใน อยู่ในกรอบ 100% เสมอ */
+  div:has(> input[type="date"]), 
+  div:has(> input),
+  .expiry-container,
+  div[style*="border: 2px dashed"],
+  div[style*="dashed"] {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+
+  /* บังคับ input ทุกตัวให้อยู่ในกรอบ ไม่ทะลุออกข้าง */
+  input, select, textarea {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+  }
+
+  /* ดักจับตารางข้อมูล */
+  table {
+    display: block !important;
+    width: 100% !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+  }
+</style>
+
 </body>
 </html>
