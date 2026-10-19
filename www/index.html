@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>สวนพร้อม - Suan-Prom</title>
+  
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1e4620">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="สวนพร้อม">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/628/628324.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --primary: #1e4620;
+      --primary-light: #2d6a4f;
+      --accent: #52b788;
+      --accent-soft: #e8f5e9;
+      --bg: #f4f7f4;
+      --surface: #ffffff;
+      --text-main: #132a13;
+      --text-muted: #607263;
+      --border-subtle: #e2e8e3;
+      --danger: #e63946;
+      --danger-soft: #ffebee;
+      --warning: #e76f51;
+      --warning-soft: #fff3e0;
+      --info: #2a9d8f;
+      --shadow-sm: 0 2px 8px rgba(19, 42, 19, 0.04);
+      --shadow-md: 0 8px 24px rgba(19, 42, 19, 0.06);
+      --radius-sm: 10px;
+      --radius-md: 16px;
+      --radius-lg: 20px;
+    }
+
+    * { box-sizing: border-box; font-family: 'Prompt', -apple-system, sans-serif; margin: 0; padding: 0; }
+    body { background-color: var(--bg); color: var(--text-main); min-height: 100vh; padding: 16px 12px 90px; font-size: 15px; -webkit-font-smoothing: antialiased; }
+    .container { max-width: 860px; margin: 0 auto; }
+
+    .top-bar { display: flex; justify-content: space-between; align-items: center; background: var(--surface); padding: 12px 18px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); margin-bottom: 16px; border: 1px solid var(--border-subtle); }
+    .brand-title { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 18px; color: var(--primary); }
+    .shop-badge { background: var(--accent-soft); color: var(--primary); padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+
+    .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-around; padding: 8px 0; z-index: 999; box-shadow: 0 -4px 16px rgba(0,0,0,0.05); }
+    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); font-size: 11px; font-weight: 500; cursor: pointer; text-decoration: none; padding: 4px 0; border: none; background: transparent; transition: 0.2s; }
+    .nav-item .icon { font-size: 20px; margin-bottom: 2px; }
+    .nav-item.active { color: var(--primary); font-weight: 700; }
+    .nav-item.active .icon { transform: translateY(-2px); }
+
+    .card { background: var(--surface); border-radius: var(--radius-md); padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-subtle); }
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #f0f4f1; }
+    .card-header h2 { font-size: 16px; font-weight: 600; color: var(--primary); display: flex; align-items: center; gap: 6px; }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+    .stat-card { background: var(--surface); padding: 14px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); text-align: center; box-shadow: var(--shadow-sm); }
+    .stat-val { font-size: 19px; font-weight: 700; color: var(--primary); margin-top: 2px; }
+    .stat-label { font-size: 12px; color: var(--text-muted); }
+
+    .filter-wrapper { margin-bottom: 14px; }
+    .search-box { position: relative; margin-bottom: 10px; }
+    .search-input { width: 100%; padding: 10px 14px 10px 36px; border: 1.5px solid var(--border-subtle); border-radius: 20px; font-size: 14px; outline: none; background: #fafbfc; transition: 0.2s; }
+    .search-input:focus { border-color: var(--accent); background: #ffffff; }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; color: #888; }
+    .chips-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+    .chips-bar::-webkit-scrollbar { display: none; }
+    .chip { padding: 5px 12px; border-radius: 16px; font-size: 12px; font-weight: 600; cursor: pointer; background: #edf2ee; color: var(--text-muted); border: 1px solid transparent; white-space: nowrap; transition: 0.15s; }
+    .chip.active { background: var(--primary); color: #ffffff; }
+
+    .pos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-bottom: 16px; }
+    .pos-item-card { background: #fafcfa; border: 1.5px solid var(--border-subtle); border-radius: 12px; padding: 12px; cursor: pointer; text-align: center; transition: 0.15s; }
+    .pos-item-card:active { transform: scale(0.96); }
+    .pos-item-card.selected { border-color: var(--primary); background: var(--accent-soft); }
+    .pos-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pos-price { font-size: 14px; font-weight: 700; color: var(--warning); }
+    .pos-stock { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .pos-exp { font-size: 10px; border-radius: 10px; padding: 2px 6px; display: inline-block; margin-top: 4px; font-weight: 500; }
+
+    .form-group { margin-bottom: 12px; }
+    .form-row { display: flex; gap: 10px; margin-bottom: 12px; }
+    .form-row .form-group { flex: 1; margin-bottom: 0; }
+    label { display: block; font-size: 13px; font-weight: 500; color: var(--text-muted); margin-bottom: 5px; }
+    input, select { width: 100%; padding: 11px 12px; border: 1.5px solid var(--border-subtle); border-radius: var(--radius-sm); font-size: 15px; outline: none; background: #fafbfc; transition: 0.2s; }
+    input:focus, select:focus { border-color: var(--accent); background: #ffffff; }
+
+    .password-wrap { position: relative; }
+    .toggle-pwd-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 16px; color: var(--text-muted); padding: 4px; }
+    .pwd-status-text { font-size: 12px; margin-top: 5px; color: var(--text-muted); transition: 0.2s; }
+
+    .btn { display: inline-flex; align-items: center; justify-content: center; width: 100%; background: var(--primary); color: #fff; border: none; padding: 13px; font-size: 15px; font-weight: 600; border-radius: var(--radius-sm); cursor: pointer; transition: 0.15s; gap: 6px; }
+    .btn:active { transform: scale(0.98); opacity: 0.9; }
+    .btn-sell { background: linear-gradient(135deg, #e76f51 0%, #d9534f 100%); }
+    .btn-secondary { background: var(--primary-light); }
+    .btn-adjust { background: var(--info); }
+    .btn-edit-sm { background: #f0f7f4; color: var(--primary); border: 1px solid var(--border-subtle); padding: 5px 10px; font-size: 12px; font-weight: 600; border-radius: 8px; cursor: pointer; }
+    .btn-logout { background: var(--danger-soft); color: var(--danger); border: none; padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+    .total-banner { background: #fff8f6; border: 1.5px dashed #fcd5ce; border-radius: var(--radius-sm); padding: 12px 16px; margin: 12px 0; display: flex; justify-content: space-between; align-items: center; }
+    .total-banner-price { font-size: 22px; font-weight: 700; color: var(--danger); }
+
+    .table-container { overflow-x: auto; margin-top: 6px; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; }
+    th { background: #fafbfc; color: var(--text-muted); font-size: 12px; font-weight: 600; padding: 10px 8px; border-bottom: 1.5px solid var(--border-subtle); text-align: left; }
+    td { padding: 12px 8px; border-bottom: 1px solid #f2f5f3; font-size: 14px; vertical-align: middle; }
+    
+    .status-badge { display: inline-block; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-success { background: var(--accent-soft); color: var(--primary); }
+    .badge-danger { background: var(--danger-soft); color: var(--danger); }
+    .badge-warn { background: #fff3cd; color: #856404; }
+
+    .auth-toggle { display: flex; background: #edf2ee; padding: 4px; border-radius: 12px; margin-bottom: 18px; }
+    .auth-tab { flex: 1; text-align: center; padding: 9px; font-size: 14px; font-weight: 600; border-radius: 9px; cursor: pointer; color: var(--text-muted); }
+    .auth-tab.active { background: #ffffff; color: var(--primary); box-shadow: var(--shadow-sm); }
+    
+    .auth-footer-links { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; font-size: 13px; color: var(--text-muted); }
+    .link-btn { background: none; border: none; color: var(--primary-light); cursor: pointer; font-size: 13px; text-decoration: underline; font-weight: 600; padding: 0; }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .empty-text { text-align: center; color: #9aa89b; padding: 20px; font-size: 13px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- กล่องเข้าสู่ระบบ / สมัครสมาชิก / ลืมรหัสผ่าน -->
+  <div class="card" id="authCard" style="max-width: 440px; margin: 40px auto; padding: 26px;">
+    <div style="text-align: center; margin-bottom: 20px;">
+      <div style="font-size: 32px;">🌱</div>
+      <h1 style="color: var(--primary); font-size: 22px;">สวนพร้อม (Suan-Prom)</h1>
+      <p style="color: var(--text-muted); font-size: 13px;">ระบบจัดการร้านและสต็อกต้นกล้าอัจฉริยะ</p>
+    </div>
+
+    <!-- ส่วนล็อกอินและสมัครสมาชิก -->
+    <div id="standardAuthView">
+      <div class="auth-toggle">
+        <div class="auth-tab active" id="tabLogin" onclick="switchAuthMode('login')">เข้าสู่ระบบ</div>
+        <div class="auth-tab" id="tabSignUp" onclick="switchAuthMode('signup')">สมัครสมาชิกทันที</div>
+      </div>
+
+      <div class="form-group">
+        <label>อีเมล (เมลมหาวิทยาลัย หรือ Gmail ทั่วไป)</label>
+        <input type="email" id="authEmail" placeholder="เช่น student@kmitl.ac.th">
+      </div>
+      
+      <div class="form-group">
+        <label>รหัสผ่าน</label>
+        <div class="password-wrap">
+          <input type="password" id="authPassword" placeholder="รหัสผ่านอย่างน้อย 6 ตัวอักษร" oninput="checkPasswordStrength(this.value)" style="padding-right: 40px;">
+          <button type="button" class="toggle-pwd-btn" onclick="togglePasswordVisibility('authPassword', this)">👁️</button>
+        </div>
+        <div id="pwdHint" class="pwd-status-text">* รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร</div>
+      </div>
+
+      <div class="auth-footer-links">
+        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; margin: 0;">
+          <input type="checkbox" id="rememberMe" checked style="width: auto;">
+          <span>จดจำการเข้าสู่ระบบ</span>
+        </label>
+        <button type="button" class="link-btn" onclick="showForgotPasswordView()">ลืมรหัสผ่าน?</button>
+      </div>
+
+      <div style="margin-top: 20px;">
+        <button class="btn" id="authSubmitBtn" onclick="submitAuth()">เข้าสู่ระบบ</button>
+      </div>
+    </div>
+
+    <!-- ส่วนตั้งรหัสผ่านใหม่ (Reset Password View) -->
+    <div id="forgotPasswordView" style="display: none;">
+      <h2 style="font-size: 16px; color: var(--primary); margin-bottom: 14px; text-align: center;">🔑 ตั้งรหัสผ่านใหม่ทันที</h2>
+      <div class="form-group">
+        <label>ระบุอีเมลบัญชีของคุณ</label>
+        <input type="email" id="resetEmail" placeholder="เช่น student@kmitl.ac.th">
+      </div>
+      <div class="form-group">
+        <label>รหัสผ่านใหม่</label>
+        <div class="password-wrap">
+          <input type="password" id="resetNewPassword" placeholder="รหัสผ่านใหม่อย่างน้อย 6 ตัวอักษร" oninput="checkResetPasswordStrength(this.value)" style="padding-right: 40px;">
+          <button type="button" class="toggle-pwd-btn" onclick="togglePasswordVisibility('resetNewPassword', this)">👁️</button>
+        </div>
+        <div id="resetPwdHint" class="pwd-status-text">* รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร</div>
+      </div>
+      <div style="margin-top: 18px; display: flex; gap: 10px;">
+        <button class="btn" style="flex: 2; background: var(--info);" onclick="handleInstantPasswordReset()">ยืนยันเปลี่ยนรหัสผ่าน</button>
+        <button class="btn" style="flex: 1; background: #6c757d;" onclick="hideForgotPasswordView()">ย้อนกลับ</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- โครงสร้างแอปเมื่อล็อกอิน -->
+  <div id="appContent" style="display: none;">
+    
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <div class="brand-title">🌱 สวนพร้อม</div>
+      <div class="shop-badge" onclick="switchTab('tabSettings')">
+        <span id="currentShopBadgeText">กำลังโหลด...</span> ⚙️
+      </div>
+    </div>
+
+    <!-- แดชบอร์ดสรุปตัวเลข -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">ยอดขายวันนี้</div>
+        <div class="stat-val" id="statTodaySales">0 บ.</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">พร้อมจำหน่ายทันที</div>
+        <div class="stat-val" style="color: var(--accent);" id="statReadyStock">0 ชนิด</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">สต็อกใกล้หมด</div>
+        <div class="stat-val" style="color: var(--danger);" id="statLowStock">0</div>
+      </div>
+    </div>
+
+    <!-- แท็บที่ 1: ขายหน้าร้าน (POS) -->
+    <div id="tabPos" class="tab-content active">
+      <div class="card" style="border-top: 4px solid var(--warning);">
+        <div class="card-header">
+          <h2>🛒 แตะเลือกสินค้าที่ต้องการขาย</h2>
+        </div>
+        
+        <div class="filter-wrapper">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" class="search-input" id="posSearchInput" placeholder="ค้นหาชื่อต้นกล้า..." oninput="filterPosProducts()">
+          </div>
+          <div class="chips-bar" id="posCategoryChips">
+            <div class="chip active" onclick="setPosFilterCategory('all')">ทั้งหมด</div>
+          </div>
+        </div>
+
+        <div class="pos-grid" id="posGridContainer">
+          <div class="empty-text">กำลังโหลดรายการต้นกล้า...</div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group" style="flex: 2;">
+            <label>หรือเลือกจากรายการ</label>
+            <select id="sellProductSelect" onchange="syncPosSelect()">
+              <option value="">-- เลือกสินค้า --</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label>จำนวนที่ขาย</label>
+            <input type="number" id="sellQty" value="1" min="1" oninput="updateSaleCalc()">
+          </div>
+        </div>
+
+        <div class="total-banner">
+          <span style="font-size: 14px; color: #8d4f45; font-weight: 500;">ยอดชำระรวม:</span>
+          <span class="total-banner-price" id="saleTotalText">0 บาท</span>
+        </div>
+        <button class="btn btn-sell" onclick="submitSale()">💰 ยืนยันการขายและตัดสต็อก</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>📜 ประวัติการขายล่าสุด (5 รายการ)</h2>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>เวลาที่ขาย</th>
+                <th>รหัสใบเสร็จ</th>
+                <th style="text-align: right;">ยอดรวม</th>
+              </tr>
+            </thead>
+            <tbody id="salesTableBody">
+              <tr><td colspan="3" class="empty-text">ยังไม่มีประวัติการขาย</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- แท็บที่ 2: จัดการคลังสต็อก & วันหมดอายุ -->
+    <div id="tabStock" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <h2>📋 ข้อมูลสต็อกสินค้า & วันหมดอายุ</h2>
+        </div>
+        
+        <div class="filter-wrapper">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" class="search-input" id="stockSearchInput" placeholder="ค้นหาชื่อสินค้าในคลัง..." oninput="filterStockTable()">
+          </div>
+          <div class="chips-bar" id="stockCategoryChips">
+            <div class="chip active" onclick="setStockFilterCategory('all')">ทั้งหมด</div>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>ชื่อสินค้า</th>
+                <th>ประเภท</th>
+                <th>ราคา</th>
+                <th>คงเหลือ</th>
+                <th>วันหมดอายุ/ควรปลูกก่อน</th>
+                <th>สถานะสินค้า</th>
+                <th style="text-align: center;">แก้ไข</th>
+              </tr>
+            </thead>
+            <tbody id="productTableBody">
+              <tr><td colspan="7" class="empty-text">กำลังโหลดข้อมูล...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card" style="border-top: 4px solid var(--info);">
+        <div class="card-header">
+          <h2>🔄 ปรับปรุงสต็อก (รับเข้า / เสียหาย / คัดทิ้ง)</h2>
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="flex: 2;">
+            <label>เลือกสินค้า</label>
+            <select id="adjProductSelect">
+              <option value="">-- เลือกสินค้า --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>ประเภทการปรับ</label>
+            <select id="adjType">
+              <option value="in">➕ รับเข้า / เพาะเพิ่ม</option>
+              <option value="waste">➖ คัดทิ้ง / เสียหาย</option>
+              <option value="adjust">✏️ ปรับยอดนับจริง</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="flex: 1;">
+            <label>จำนวน</label>
+            <input type="number" id="adjQty" value="10" min="1">
+          </div>
+          <div class="form-group" style="flex: 2;">
+            <label>หมายเหตุ</label>
+            <input type="text" id="adjNote" placeholder="เช่น เพาะกล้ารุ่นใหม่ หรือ คัดกล้าเฉาทิ้ง">
+          </div>
+        </div>
+        <button class="btn btn-adjust" onclick="submitStockAdjustment()">📥 บันทึกการปรับสต็อก</button>
+      </div>
+
+      <div class="card" id="productFormCard">
+        <div class="card-header">
+          <h2 id="productFormTitle">🌱 เพิ่มสินค้า / ต้นกล้าใหม่</h2>
+        </div>
+        <input type="hidden" id="editingProductId" value="">
+        <div class="form-row">
+          <div class="form-group" style="flex: 2;">
+            <label>ชื่อต้นกล้า / สินค้า</label>
+            <input type="text" id="pName" placeholder="เช่น กล้าพริกขี้หนู, เมล็ดมะเขือเปราะ">
+          </div>
+          <div class="form-group">
+            <label>ประเภท (เช่น ต้นกล้า, เมล็ด, ปุ๋ย)</label>
+            <input type="text" id="pType" value="ต้นกล้า">
+          </div>
+        </div>
+
+        <div class="form-row" style="background: #f7faf8; padding: 12px; border-radius: 10px; border: 1.5px dashed var(--accent);">
+          <div class="form-group" style="flex: 1;">
+            <label>⏳ วันหมดอายุ / ควรย้ายปลูกก่อน (ระบุหรือไม่ก็ได้)</label>
+            <input type="date" id="pExpireDate">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>หน่วยนับ</label>
+            <input type="text" id="pUnit" value="ต้น">
+          </div>
+          <div class="form-group">
+            <label>ราคาขาย (บาท)</label>
+            <input type="number" id="pPrice" placeholder="เช่น 15">
+          </div>
+          <div class="form-group">
+            <label>ต้นทุน (บาท)</label>
+            <input type="number" id="pCost" placeholder="เช่น 7">
+          </div>
+        </div>
+        <div class="form-row" id="stockInputGroup">
+          <div class="form-group" style="flex: 1;">
+            <label>สต็อกพร้อมขายตั้งต้น</label>
+            <input type="number" id="pStock" value="10">
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label>เตือนสต็อกต่ำเมื่อน้อยกว่า</label>
+            <input type="number" id="pLowStock" value="20">
+          </div>
+        </div>
+        <div class="form-row" id="formActionButtons" style="margin-bottom: 0;">
+          <button class="btn" id="saveProductBtn" onclick="saveProduct()">💾 บันทึกสินค้า</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- แท็บที่ 3: คำนวณถาดเพาะ -->
+    <div id="tabCalc" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <h2>🔢 เครื่องมือคำนวณการเพาะกล้า</h2>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>จำนวนถาดเพาะ (ถาด)</label>
+            <input type="number" id="calcTray" value="10" oninput="runCalculator()">
+          </div>
+          <div class="form-group">
+            <label>จำนวนหลุมต่อ 1 ถาด (หลุม)</label>
+            <input type="number" id="calcHole" value="104" oninput="runCalculator()">
+          </div>
+        </div>
+        <div style="text-align: center; padding: 20px; background: #eaf5ee; border-radius: 12px; margin-top: 10px;">
+          <div style="font-size: 13px; color: var(--text-muted);">ประมาณการต้นกล้าที่จะได้รับทั้งหมด:</div>
+          <div id="calcOutput" style="font-size: 26px; font-weight: 700; color: var(--primary); margin-top: 4px;">1,040 ต้น</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- แท็บที่ 4: ตั้งค่าสวน / บัญชีผู้ใช้ -->
+    <div id="tabSettings" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <h2>👤 บัญชีผู้ใช้งาน</h2>
+        </div>
+        <p style="font-size: 14px; margin-bottom: 12px;">อีเมล: <strong id="userEmailText" style="color: var(--primary);">-</strong></p>
+        <button class="btn-logout" onclick="handleLogout()">ออกจากระบบ</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>🏡 สวน / ร้านค้าของคุณ</h2>
+        </div>
+        <div class="form-group">
+          <label>เลือกร้านค้าที่ใช้งาน</label>
+          <select id="shopSelect" onchange="switchShop()">
+            <option value="">-- กำลังโหลดร้านค้า... --</option>
+          </select>
+        </div>
+        <div class="form-row" style="margin-top: 14px;">
+          <div class="form-group" style="flex: 2;">
+            <label>สร้างสวน / ร้านใหม่</label>
+            <input type="text" id="newShopName" placeholder="พิมพ์ชื่อสวนใหม่">
+          </div>
+          <div class="form-group" style="align-self: flex-end; min-width: 120px;">
+            <button class="btn btn-secondary" onclick="createNewShop()">+ สร้างร้าน</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="nav-bar">
+      <button class="nav-item active" id="navPos" onclick="switchTab('tabPos')">
+        <span class="icon">🛒</span>
+        <span>ขายหน้าร้าน</span>
+      </button>
+      <button class="nav-item" id="navStock" onclick="switchTab('tabStock')">
+        <span class="icon">🌱</span>
+        <span>คลังสินค้า</span>
+      </button>
+      <button class="nav-item" id="navCalc" onclick="switchTab('tabCalc')">
+        <span class="icon">🔢</span>
+        <span>คำนวณถาด</span>
+      </button>
+      <button class="nav-item" id="navSettings" onclick="switchTab('tabSettings')">
+        <span class="icon">⚙️</span>
+        <span>จัดการสวน</span>
+      </button>
+    </nav>
+
+  </div>
+</div>
+
+<script>
+  const SB_URL = 'https://slrczkvhogdvexwonyiw.supabase.co';
+  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNscmN6a3Zob2dkdmV4d29ueWl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjAyMjksImV4cCI6MjEwNzQzNjIyOX0.Xy2cgZxc4fSD71tm5Rs_JCfFWleBJdr49dmt1qX3Xyo';
+
+  const sb = supabase.createClient(SB_URL, SB_KEY);
+
+  let currentUser = null;
+  let activeShopId = null;
+  let currentProducts = [];
+  let currentAuthMode = 'login';
+
+  let activePosCategory = 'all';
+  let activeStockCategory = 'all';
+
+  window.onload = function() {
+    runCalculator();
+    initAuthListener();
+  };
+
+  function checkPasswordStrength(val) {
+    const hint = document.getElementById('pwdHint');
+    if (!hint) return;
+
+    if (val.length === 0) {
+      hint.innerText = '* รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร';
+      hint.style.color = 'var(--text-muted)';
+    } else if (val.length < 6) {
+      hint.innerText = `⚠️ รหัสผ่านสั้นเกินไป (ใส่แล้ว ${val.length}/6 ตัว)`;
+      hint.style.color = 'var(--danger)';
+    } else {
+      hint.innerText = `✅ รหัสผ่านถูกต้องและพร้อมใช้งาน (${val.length} ตัวอักษร)`;
+      hint.style.color = 'var(--primary-light)';
+    }
+  }
+
+  function checkResetPasswordStrength(val) {
+    const hint = document.getElementById('resetPwdHint');
+    if (!hint) return;
+
+    if (val.length === 0) {
+      hint.innerText = '* รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร';
+      hint.style.color = 'var(--text-muted)';
+    } else if (val.length < 6) {
+      hint.innerText = `⚠️ รหัสผ่านสั้นเกินไป (ใส่แล้ว ${val.length}/6 ตัว)`;
+      hint.style.color = 'var(--danger)';
+    } else {
+      hint.innerText = `✅ รหัสผ่านใหม่ผ่านเกณฑ์ (${val.length} ตัวอักษร)`;
+      hint.style.color = 'var(--primary-light)';
+    }
+  }
+
+  function togglePasswordVisibility(inputId, btn) {
+    const field = document.getElementById(inputId);
+    if (field.type === 'password') {
+      field.type = 'text';
+      btn.innerText = '🙈';
+    } else {
+      field.type = 'password';
+      btn.innerText = '👁️';
+    }
+  }
+
+  function showForgotPasswordView() {
+    document.getElementById('standardAuthView').style.display = 'none';
+    document.getElementById('forgotPasswordView').style.display = 'block';
+    document.getElementById('resetEmail').value = document.getElementById('authEmail').value;
+  }
+
+  function hideForgotPasswordView() {
+    document.getElementById('forgotPasswordView').style.display = 'none';
+    document.getElementById('standardAuthView').style.display = 'block';
+  }
+
+  async function handleInstantPasswordReset() {
+    const email = document.getElementById('resetEmail').value.trim();
+    const newPassword = document.getElementById('resetNewPassword').value.trim();
+
+    if (!email) return alert('⚠️ กรุณากรอกอีเมลบัญชีของคุณ');
+    if (!newPassword) return alert('⚠️ กรุณากรอกรหัสผ่านใหม่');
+    if (newPassword.length < 6) return alert('⚠️ รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร');
+
+    const { data, error } = await sb.rpc('reset_instant_password', {
+      user_email: email,
+      new_password: newPassword
+    });
+
+    if (error) return alert('เกิดข้อผิดพลาด: ' + error.message);
+    if (!data.success) return alert(data.message);
+
+    alert('✅ เปลี่ยนรหัสผ่านใหม่สำเร็จแล้ว! ระบบกำลังเข้าสู่ระบบให้อัตโนมัติ');
+    document.getElementById('authEmail').value = email;
+    document.getElementById('authPassword').value = newPassword;
+    hideForgotPasswordView();
+    handleLogin();
+  }
+
+  function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+
+    document.getElementById(tabId).classList.add('active');
+    
+    if (tabId === 'tabPos') document.getElementById('navPos').classList.add('active');
+    if (tabId === 'tabStock') document.getElementById('navStock').classList.add('active');
+    if (tabId === 'tabCalc') document.getElementById('navCalc').classList.add('active');
+    if (tabId === 'tabSettings') document.getElementById('navSettings').classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function switchAuthMode(mode) {
+    currentAuthMode = mode;
+    const tabLogin = document.getElementById('tabLogin');
+    const tabSignUp = document.getElementById('tabSignUp');
+    const btn = document.getElementById('authSubmitBtn');
+
+    if (mode === 'login') {
+      tabLogin.classList.add('active');
+      tabSignUp.classList.remove('active');
+      btn.innerText = 'เข้าสู่ระบบ';
+      btn.className = 'btn';
+    } else {
+      tabSignUp.classList.add('active');
+      tabLogin.classList.remove('active');
+      btn.innerText = 'สมัครสมาชิกทันที';
+      btn.className = 'btn btn-secondary';
+    }
+  }
+
+  function submitAuth() {
+    if (currentAuthMode === 'login') {
+      handleLogin();
+    } else {
+      handleInstantSignUp();
+    }
+  }
+
+  function initAuthListener() {
+    const savedUser = localStorage.getItem('sp_custom_user');
+    if (savedUser) {
+      try {
+        currentUser = JSON.parse(savedUser);
+        showApp();
+      } catch (e) {
+        showAuth();
+      }
+    } else {
+      showAuth();
+    }
+
+    const savedEmail = localStorage.getItem('sp_saved_email');
+    if (savedEmail) {
+      document.getElementById('authEmail').value = savedEmail;
+    }
+  }
+
+  function showAuth() {
+    document.getElementById('authCard').style.display = 'block';
+    document.getElementById('appContent').style.display = 'none';
+  }
+
+  function showApp() {
+    document.getElementById('authCard').style.display = 'none';
+    document.getElementById('appContent').style.display = 'block';
+    document.getElementById('userEmailText').innerText = currentUser.email;
+    loadShops();
+  }
+
+  async function handleInstantSignUp() {
+    const email = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPassword').value.trim();
+    if (!email) return alert('⚠️ กรุณากรอกอีเมล');
+    if (!password) return alert('⚠️ กรุณากรอกรหัสผ่าน');
+    if (password.length < 6) return alert('⚠️ รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');
+
+    const { data, error } = await sb.rpc('register_instant_user', {
+      user_email: email,
+      user_password: password
+    });
+
+    if (error) return alert('เกิดข้อผิดพลาดในการสมัคร: ' + error.message);
+    if (!data.success) return alert(data.message);
+
+    alert('🎉 สมัครสมาชิกสำเร็จ! กำลังเข้าสู่ระบบให้ทันที');
+    handleLogin();
+  }
+
+  // เข้าสู่ระบบผ่าน custom_login โดยตรง ไม่ติดปัญหา schema querying error
+  async function handleLogin() {
+    const email = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPassword').value.trim();
+    if (!email) return alert('⚠️ กรุณากรอกอีเมล');
+    if (!password) return alert('⚠️ กรุณากรอกรหัสผ่าน');
+    if (password.length < 6) return alert('⚠️ รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');
+
+    const { data, error } = await sb.rpc('custom_login', {
+      user_email: email,
+      user_password: password
+    });
+
+    if (error) {
+      return alert('เกิดข้อผิดพลาด: ' + error.message);
+    }
+
+    if (!data.success) {
+      return alert('❌ ' + data.message);
+    }
+
+    currentUser = data.user;
+    localStorage.setItem('sp_custom_user', JSON.stringify(currentUser));
+
+    if (document.getElementById('rememberMe').checked) {
+      localStorage.setItem('sp_saved_email', email);
+    } else {
+      localStorage.removeItem('sp_saved_email');
+    }
+
+    showApp();
+  }
+
+  async function handleLogout() {
+    localStorage.removeItem('sp_custom_user');
+    localStorage.removeItem('sp_user_active_shop');
+    currentUser = null;
+    activeShopId = null;
+    showAuth();
+  }
+
+  async function loadShops() {
+    const { data, error } = await sb.from('shops').select('id, name').order('created_at', { ascending: false });
+    const select = document.getElementById('shopSelect');
+    select.innerHTML = '';
+
+    if (error || !data || data.length === 0) {
+      select.innerHTML = '<option value="">-- ยังไม่มีร้านค้า (กรุณาสร้างสวนใหม่) --</option>';
+      document.getElementById('currentShopBadgeText').innerText = 'ยังไม่มีสวน';
+      activeShopId = null;
+      loadProducts();
+      return;
+    }
+
+    data.forEach(shop => {
+      const opt = document.createElement('option');
+      opt.value = shop.id;
+      opt.textContent = shop.name;
+      select.appendChild(opt);
+    });
+
+    const savedShop = localStorage.getItem('sp_user_active_shop');
+    if (savedShop && data.some(s => s.id === savedShop)) {
+      select.value = savedShop;
+      activeShopId = savedShop;
+    } else {
+      activeShopId = data[0].id;
+      select.value = activeShopId;
+    }
+
+    const currentShopName = data.find(s => s.id === activeShopId)?.name || 'สวนของคุณ';
+    document.getElementById('currentShopBadgeText').innerText = currentShopName;
+
+    loadProducts();
+    loadRecentSales();
+  }
+
+  async function createNewShop() {
+    const name = document.getElementById('newShopName').value.trim();
+    if (!name) return alert('กรุณาพิมพ์ชื่อร้าน');
+
+    let res = await sb.rpc('create_shop', { shop_name: name });
+    if (res.error) {
+      res = await sb.from('shops').insert([{ name, owner_id: currentUser.id }]).select().single();
+    }
+
+    if (res.error) return alert('สร้างร้านไม่สำเร็จ: ' + res.error.message);
+
+    const createdShopId = res.data?.id || (typeof res.data === 'string' ? res.data : null);
+    document.getElementById('newShopName').value = '';
+    alert('สร้างร้าน ' + name + ' เรียบร้อย!');
+    if (createdShopId) localStorage.setItem('sp_user_active_shop', createdShopId);
+    loadShops();
+  }
+
+  function switchShop() {
+    activeShopId = document.getElementById('shopSelect').value;
+    localStorage.setItem('sp_user_active_shop', activeShopId);
+    resetProductForm();
+    loadShops();
+  }
+
+  function calculateExpiry(expDateStr) {
+    if (!expDateStr) {
+      return { 
+        isExpired: false, 
+        expText: 'ไม่ระบุวันหมดอายุ', 
+        statusBadge: '<span class="status-badge badge-success">✨ พร้อมขายปกติ</span>',
+        cardBadge: '<span class="pos-exp" style="background:#eaf5ee; color:#2d6a4f;">พร้อมขาย</span>'
+      };
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const exp = new Date(expDateStr);
+    exp.setHours(0, 0, 0, 0);
+
+    const diffDays = Math.round((exp - today) / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+      return {
+        isExpired: true,
+        expText: `${expDateStr} (หมดอายุแล้ว)`,
+        statusBadge: `<span class="status-badge badge-danger">⛔ หมดอายุแล้ว (${Math.abs(diffDays)} วันก่อน)</span>`,
+        cardBadge: `<span class="pos-exp" style="background:#fee2e2; color:#b91c1c;">หมดอายุ</span>`
+      };
+    } else if (diffDays <= 7) {
+      return {
+        isExpired: false,
+        expText: `${expDateStr} (เหลือ ${diffDays} วัน)`,
+        statusBadge: `<span class="status-badge badge-warn">⚠️ ใกล้หมดอายุ (อีก ${diffDays} วัน)</span>`,
+        cardBadge: `<span class="pos-exp" style="background:#fef3c7; color:#b45309;">ใกล้หมดอายุ</span>`
+      };
+    } else {
+      return {
+        isExpired: false,
+        expText: `${expDateStr} (อีก ${diffDays} วัน)`,
+        statusBadge: `<span class="status-badge badge-success">✨ พร้อมขายปกติ</span>`,
+        cardBadge: `<span class="pos-exp" style="background:#eaf5ee; color:#2d6a4f;">พร้อมขาย</span>`
+      };
+    }
+  }
+
+  async function loadProducts() {
+    const tbody = document.getElementById('productTableBody');
+    const sellSelect = document.getElementById('sellProductSelect');
+    const adjSelect = document.getElementById('adjProductSelect');
+    const posGrid = document.getElementById('posGridContainer');
+
+    if (!activeShopId) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-text">กรุณาสร้างหรือเลือกร้านค้าก่อน</td></tr>';
+      posGrid.innerHTML = '<div class="empty-text">กรุณาสร้างหรือเลือกร้านค้าก่อน</div>';
+      sellSelect.innerHTML = '<option value="">-- เลือกร้านค้าก่อน --</option>';
+      adjSelect.innerHTML = '<option value="">-- เลือกร้านค้าก่อน --</option>';
+      updateStats();
+      return;
+    }
+
+    const { data, error } = await sb.from('products').select('*').eq('shop_id', activeShopId).order('id', { ascending: false });
+    if (error) {
+      tbody.innerHTML = `<tr><td colspan="7" class="empty-text">เกิดข้อผิดพลาด: ${error.message}</td></tr>`;
+      return;
+    }
+
+    currentProducts = data || [];
+    sellSelect.innerHTML = '<option value="">-- เลือกสินค้า --</option>';
+    adjSelect.innerHTML = '<option value="">-- เลือกสินค้า --</option>';
+
+    if (!data || data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-text">ยังไม่มีสินค้าในร้านนี้</td></tr>';
+      posGrid.innerHTML = '<div class="empty-text">ยังไม่มีรายการสินค้าในระบบ</div>';
+      updateStats();
+      return;
+    }
+
+    data.forEach(p => {
+      const adjOpt = document.createElement('option');
+      adjOpt.value = p.id;
+      adjOpt.textContent = `${p.name} (คงเหลือ: ${p.stock} ${p.unit || ''})`;
+      adjSelect.appendChild(adjOpt);
+
+      if (p.stock > 0) {
+        const sellOpt = document.createElement('option');
+        sellOpt.value = p.id;
+        sellOpt.textContent = `${p.name} (คงเหลือ: ${p.stock} ${p.unit || ''} | ${p.price} บ.)`;
+        sellSelect.appendChild(sellOpt);
+      }
+    });
+
+    renderCategoryChips();
+    filterPosProducts();
+    filterStockTable();
+    updateSaleCalc();
+    updateStats();
+  }
+
+  function renderCategoryChips() {
+    const types = Array.from(new Set(currentProducts.map(p => p.type || 'ทั่วไป'))).filter(Boolean);
+
+    const posChips = document.getElementById('posCategoryChips');
+    const stockChips = document.getElementById('stockCategoryChips');
+
+    let htmlPos = `<div class="chip ${activePosCategory === 'all' ? 'active' : ''}" onclick="setPosFilterCategory('all')">ทั้งหมด</div>`;
+    let htmlStock = `<div class="chip ${activeStockCategory === 'all' ? 'active' : ''}" onclick="setStockFilterCategory('all')">ทั้งหมด</div>`;
+
+    types.forEach(t => {
+      htmlPos += `<div class="chip ${activePosCategory === t ? 'active' : ''}" onclick="setPosFilterCategory('${t}')">${t}</div>`;
+      htmlStock += `<div class="chip ${activeStockCategory === t ? 'active' : ''}" onclick="setStockFilterCategory('${t}')">${t}</div>`;
+    });
+
+    posChips.innerHTML = htmlPos;
+    stockChips.innerHTML = htmlStock;
+  }
+
+  function setPosFilterCategory(cat) {
+    activePosCategory = cat;
+    renderCategoryChips();
+    filterPosProducts();
+  }
+
+  function setStockFilterCategory(cat) {
+    activeStockCategory = cat;
+    renderCategoryChips();
+    filterStockTable();
+  }
+
+  function filterPosProducts() {
+    const keyword = (document.getElementById('posSearchInput').value || '').trim().toLowerCase();
+    const posGrid = document.getElementById('posGridContainer');
+    posGrid.innerHTML = '';
+
+    const filtered = currentProducts.filter(p => {
+      if (p.stock <= 0) return false;
+      const matchName = (p.name || '').toLowerCase().includes(keyword);
+      const matchCat = activePosCategory === 'all' || (p.type || 'ทั่วไป') === activePosCategory;
+      return matchName && matchCat;
+    });
+
+    if (filtered.length === 0) {
+      posGrid.innerHTML = '<div class="empty-text">ไม่พบต้นกล้าที่ตรงกับการค้นหา</div>';
+      return;
+    }
+
+    filtered.forEach(p => {
+      const expInfo = calculateExpiry(p.expire_date);
+      const card = document.createElement('div');
+      card.className = 'pos-item-card';
+      card.id = `posCard_${p.id}`;
+      card.onclick = () => selectPosProduct(p.id);
+      card.innerHTML = `
+        <div style="font-size: 22px;">🌱</div>
+        <div class="pos-name">${p.name}</div>
+        <div class="pos-price">${Number(p.price).toLocaleString()} บ.</div>
+        <div class="pos-stock">เหลือ ${p.stock} ${p.unit || ''}</div>
+        <div>${expInfo.cardBadge}</div>
+      `;
+      posGrid.appendChild(card);
+    });
+  }
+
+  function filterStockTable() {
+    const keyword = (document.getElementById('stockSearchInput').value || '').trim().toLowerCase();
+    const tbody = document.getElementById('productTableBody');
+    tbody.innerHTML = '';
+
+    const filtered = currentProducts.filter(p => {
+      const matchName = (p.name || '').toLowerCase().includes(keyword);
+      const matchCat = activeStockCategory === 'all' || (p.type || 'ทั่วไป') === activeStockCategory;
+      return matchName && matchCat;
+    });
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-text">ไม่พบรายการสินค้าที่ค้นหา</td></tr>';
+      return;
+    }
+
+    filtered.forEach(p => {
+      const isLow = p.stock <= (p.low_stock_at || 0);
+      const expInfo = calculateExpiry(p.expire_date);
+
+      tbody.innerHTML += `
+        <tr>
+          <td><strong>${p.name}</strong></td>
+          <td style="color: var(--text-muted);">${p.type || '-'}</td>
+          <td><strong>${Number(p.price).toLocaleString()}</strong> บ.</td>
+          <td><strong>${p.stock}</strong> <small>${p.unit || ''}</small> ${isLow ? '<span style="color:red; font-size:11px;">(ใกล้หมด)</span>' : ''}</td>
+          <td>${expInfo.expText}</td>
+          <td>${expInfo.statusBadge}</td>
+          <td style="text-align: center;">
+            <button class="btn-edit-sm" onclick="startEditProduct(${p.id})">✏️</button>
+          </td>
+        </tr>
+      `;
+    });
+  }
+
+  function selectPosProduct(pId) {
+    document.querySelectorAll('.pos-item-card').forEach(c => c.classList.remove('selected'));
+    const selectedCard = document.getElementById(`posCard_${pId}`);
+    if (selectedCard) selectedCard.classList.add('selected');
+
+    document.getElementById('sellProductSelect').value = pId;
+    updateSaleCalc();
+  }
+
+  function syncPosSelect() {
+    const pId = document.getElementById('sellProductSelect').value;
+    document.querySelectorAll('.pos-item-card').forEach(c => c.classList.remove('selected'));
+    if (pId) {
+      const selectedCard = document.getElementById(`posCard_${pId}`);
+      if (selectedCard) selectedCard.classList.add('selected');
+    }
+    updateSaleCalc();
+  }
+
+  function updateStats() {
+    let readyCount = 0;
+    let lowCount = 0;
+    
+    currentProducts.forEach(p => {
+      if (p.stock <= (p.low_stock_at || 0)) {
+        lowCount++;
+      }
+      if (p.stock > 0) {
+        const expInfo = calculateExpiry(p.expire_date);
+        if (!expInfo.isExpired) {
+          readyCount++;
+        }
+      }
+    });
+
+    document.getElementById('statReadyStock').innerText = readyCount + ' ชนิด';
+    document.getElementById('statLowStock').innerText = lowCount;
+  }
+
+  function startEditProduct(id) {
+    const p = currentProducts.find(item => item.id === id);
+    if (!p) return;
+
+    document.getElementById('editingProductId').value = p.id;
+    document.getElementById('pName').value = p.name;
+    document.getElementById('pType').value = p.type || 'ต้นกล้า';
+    document.getElementById('pUnit').value = p.unit || 'ต้น';
+    document.getElementById('pPrice').value = p.price;
+    document.getElementById('pCost').value = p.cost || 0;
+    document.getElementById('pLowStock').value = p.low_stock_at || 20;
+    document.getElementById('pExpireDate').value = p.expire_date || '';
+
+    document.getElementById('stockInputGroup').style.display = 'none';
+    document.getElementById('productFormTitle').innerText = `✏️ แก้ไขข้อมูล: ${p.name}`;
+    
+    const actions = document.getElementById('formActionButtons');
+    actions.innerHTML = `
+      <div style="display: flex; gap: 10px; width: 100%;">
+        <button class="btn" style="flex: 2; background: #2a9d8f;" onclick="saveProduct()">💾 บันทึกการแก้ไข</button>
+        <button class="btn" style="flex: 1; background: #6c757d;" onclick="resetProductForm()">ยกเลิก</button>
+      </div>
+    `;
+
+    document.getElementById('productFormCard').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function resetProductForm() {
+    document.getElementById('editingProductId').value = '';
+    document.getElementById('pName').value = '';
+    document.getElementById('pType').value = 'ต้นกล้า';
+    document.getElementById('pUnit').value = 'ต้น';
+    document.getElementById('pPrice').value = '';
+    document.getElementById('pCost').value = '';
+    document.getElementById('pStock').value = '10';
+    document.getElementById('pLowStock').value = '20';
+    document.getElementById('pExpireDate').value = '';
+    document.getElementById('stockInputGroup').style.display = 'flex';
+
+    document.getElementById('productFormTitle').innerText = '🌱 เพิ่มสินค้า / ต้นกล้าใหม่';
+    document.getElementById('formActionButtons').innerHTML = `
+      <button class="btn" id="saveProductBtn" onclick="saveProduct()">💾 บันทึกสินค้า</button>
+    `;
+  }
+
+  async function saveProduct() {
+    if (!activeShopId) return alert('กรุณาเลือกร้านค้าก่อน');
+
+    const editId = document.getElementById('editingProductId').value;
+    const name = document.getElementById('pName').value.trim();
+    const type = document.getElementById('pType').value.trim();
+    const unit = document.getElementById('pUnit').value.trim();
+    const price = parseFloat(document.getElementById('pPrice').value) || 0;
+    const cost = parseFloat(document.getElementById('pCost').value) || 0;
+    const low_stock_at = parseInt(document.getElementById('pLowStock').value) || 0;
+    const expire_date = document.getElementById('pExpireDate').value || null;
+
+    if (!name) return alert('กรุณาใส่ชื่อสินค้า');
+
+    if (editId) {
+      const { error } = await sb.from('products').update({
+        name, type, unit, price, cost, low_stock_at, expire_date, updated_at: new Date().toISOString()
+      }).eq('id', editId);
+
+      if (error) return alert('แก้ไขสินค้าไม่สำเร็จ: ' + error.message);
+
+      alert(`แก้ไขข้อมูล "${name}" เรียบร้อย!`);
+      resetProductForm();
+      loadProducts();
+    } else {
+      const stock = parseInt(document.getElementById('pStock').value) || 0;
+      const { error } = await sb.from('products').insert([{
+        shop_id: activeShopId,
+        name, type, unit, price, cost, stock, low_stock_at, expire_date, active: true
+      }]);
+
+      if (error) return alert('บันทึกสินค้าไม่สำเร็จ: ' + error.message);
+
+      alert('เพิ่มสินค้าใหม่พร้อมจำหน่ายทันที!');
+      resetProductForm();
+      loadProducts();
+    }
+  }
+
+  function updateSaleCalc() {
+    const pId = document.getElementById('sellProductSelect').value;
+    const qty = parseInt(document.getElementById('sellQty').value) || 0;
+    const prod = currentProducts.find(p => p.id == pId);
+    if (!prod || qty <= 0) {
+      document.getElementById('saleTotalText').innerText = '0 บาท';
+      return;
+    }
+    const total = prod.price * qty;
+    document.getElementById('saleTotalText').innerText = `${total.toLocaleString()} บาท`;
+  }
+
+  async function submitSale() {
+    if (!activeShopId) return alert('กรุณาเลือกร้านค้า');
+    const pId = parseInt(document.getElementById('sellProductSelect').value);
+    const qty = parseInt(document.getElementById('sellQty').value) || 0;
+    const prod = currentProducts.find(p => p.id == pId);
+
+    if (!prod) return alert('กรุณาเลือกสินค้า');
+    if (qty <= 0) return alert('กรุณาระบุจำนวนที่มากกว่า 0');
+    if (qty > prod.stock) return alert(`สต็อกไม่พอขาย (มีเพียง ${prod.stock} ${prod.unit || ''})`);
+
+    const expInfo = calculateExpiry(prod.expire_date);
+    if (expInfo.isExpired) {
+      if (!confirm(`⚠️ สินค้านี้เลยวันหมดอายุแล้ว (${prod.expire_date}) ยืนยันจะขายต่อหรือไม่?`)) {
+        return;
+      }
+    }
+
+    const total = prod.price * qty;
+
+    try {
+      const { data: saleData, error: sErr } = await sb.from('sales').insert([{
+        shop_id: activeShopId,
+        total: total,
+        sold_by: currentUser.id
+      }]).select().single();
+
+      if (sErr) throw sErr;
+
+      const { error: siErr } = await sb.from('sale_items').insert([{
+        sale_id: saleData.id,
+        product_id: prod.id,
+        quantity: qty,
+        unit_price: prod.price,
+        cost_price: prod.cost || 0
+      }]);
+
+      if (siErr) throw siErr;
+
+      await sb.from('stock_movements').insert([{
+        shop_id: activeShopId,
+        product_id: prod.id,
+        user_id: currentUser.id,
+        movement_type: 'sale',
+        quantity_delta: -qty,
+        note: `ขายผ่านหน้าร้าน บิล #${saleData.id}`
+      }]);
+
+      const newStock = prod.stock - qty;
+      const { error: pErr } = await sb.from('products').update({ stock: newStock }).eq('id', prod.id);
+
+      if (pErr) throw pErr;
+
+      alert(`บันทึกการขายสำเร็จ! ยอดรวม ${total.toLocaleString()} บาท`);
+      document.getElementById('sellQty').value = '1';
+      loadProducts();
+      loadRecentSales();
+    } catch (err) {
+      alert('เกิดข้อผิดพลาดในการขาย: ' + err.message);
+    }
+  }
+
+  async function submitStockAdjustment() {
+    if (!activeShopId) return alert('กรุณาเลือกร้านค้า');
+    const pId = parseInt(document.getElementById('adjProductSelect').value);
+    const mode = document.getElementById('adjType').value;
+    const qty = parseInt(document.getElementById('adjQty').value);
+    const note = document.getElementById('adjNote').value.trim();
+    const prod = currentProducts.find(p => p.id == pId);
+
+    if (!prod) return alert('กรุณาเลือกสินค้าที่ต้องการปรับสต็อก');
+    if (isNaN(qty) || qty < 0) return alert('กรุณาระบุจำนวนที่ถูกต้อง');
+
+    let delta = 0;
+    let newStock = prod.stock;
+    let movType = mode;
+
+    if (mode === 'in') {
+      delta = qty;
+      newStock = prod.stock + qty;
+    } else if (mode === 'waste') {
+      if (qty > prod.stock) return alert(`ยอดคัดทิ้งเกินสต็อกที่มี (มี ${prod.stock})`);
+      delta = -qty;
+      newStock = prod.stock - qty;
+    } else if (mode === 'adjust') {
+      delta = qty - prod.stock;
+      newStock = qty;
+    }
+
+    try {
+      await sb.from('stock_movements').insert([{
+        shop_id: activeShopId,
+        product_id: prod.id,
+        user_id: currentUser.id,
+        movement_type: movType,
+        quantity_delta: delta,
+        note: note || `ปรับสต็อก (${mode})`
+      }]);
+
+      const { error } = await sb.from('products').update({ stock: newStock }).eq('id', prod.id);
+      if (error) throw error;
+
+      alert(`ปรับปรุงสต็อก ${prod.name} สำเร็จ! ยอดใหม่คือ ${newStock} ${prod.unit || ''}`);
+      document.getElementById('adjNote').value = '';
+      loadProducts();
+    } catch (err) {
+      alert('ปรับสต็อกไม่สำเร็จ: ' + err.message);
+    }
+  }
+
+  async function loadRecentSales() {
+    const tbody = document.getElementById('salesTableBody');
+    if (!activeShopId) return;
+
+    const { data, error } = await sb.from('sales').select('id, total, created_at').eq('shop_id', activeShopId).order('created_at', { ascending: false }).limit(5);
+    if (error || !data || data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" class="empty-text">ยังไม่มีประวัติการขาย</td></tr>';
+      document.getElementById('statTodaySales').innerText = '0 บ.';
+      return;
+    }
+
+    let todayTotal = 0;
+    const todayStr = new Date().toDateString();
+
+    tbody.innerHTML = '';
+    data.forEach(s => {
+      const saleDate = new Date(s.created_at);
+      if (saleDate.toDateString() === todayStr) {
+        todayTotal += Number(s.total);
+      }
+      const time = saleDate.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+      tbody.innerHTML += `
+        <tr>
+          <td>${time} น.</td>
+          <td><code style="background: #edf2ee; padding: 2px 6px; border-radius: 4px; font-size: 13px;">#${s.id}</code></td>
+          <td style="text-align: right;"><strong style="color: var(--primary);">${Number(s.total).toLocaleString()}</strong> บ.</td>
+        </tr>
+      `;
+    });
+
+    document.getElementById('statTodaySales').innerText = todayTotal.toLocaleString() + ' บ.';
+  }
+
+  function runCalculator() {
+    const trays = parseFloat(document.getElementById('calcTray').value) || 0;
+    const holes = parseFloat(document.getElementById('calcHole').value) || 0;
+    document.getElementById('calcOutput').innerText = `${(trays * holes).toLocaleString()} ต้น`;
+  }
+</script>
+</body>
+</html>
