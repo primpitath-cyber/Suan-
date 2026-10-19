@@ -29,7 +29,11 @@ jobs:
       - name: Build iOS Archive (Unsigned)
         run: |
           cd ios/App
-          xcodebuild -workspace App.xcworkspace \
+          PROJECT_FLAG="-project App.xcodeproj"
+          if [ -d "App.xcworkspace" ]; then
+            PROJECT_FLAG="-workspace App.xcworkspace"
+          fi
+          xcodebuild $PROJECT_FLAG \
             -scheme App \
             -configuration Release \
             -destination 'generic/platform=iOS' \
