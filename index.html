@@ -860,7 +860,7 @@ input[type="text"], input[type="date"], input[type="number"], select {
   }
 
   async function loadShops() {
-    const { data, error } = await sb.from('shops').select('id, name').order('created_at', { ascending: false });
+    const { data, error } = await sb.from('shops').select('id, name').eq('owner_id', currentUser.id).order('created_at', { ascending: false });
     const select = document.getElementById('shopSelect');
     select.innerHTML = '';
 
