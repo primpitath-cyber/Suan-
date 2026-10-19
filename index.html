@@ -165,28 +165,38 @@ input[type="text"], input[type="date"], input[type="number"], select {
 }
 </style>
 
-<style id="table-full-fix">
-  /* บังคับตารางสินค้าให้กว้างเต็มการ์ด ไม่หดเข้าซ้าย */
+
+
+
+<style id="perfect-suan-table">
+  /* บังคับคอนเทนเนอร์และตัวตารางให้กว้างเต็ม 100% เสมอ ไม่หดเข้ามุมซ้าย */
+  .table-container, .stock-table-wrap, div:has(> table) {
+    width: 100% !important;
+    max-width: 100% !important;
+    display: block !important;
+  }
+
   table {
-    display: table !important;
     width: 100% !important;
     min-width: 100% !important;
+    display: table !important;
     border-collapse: collapse !important;
-    margin-top: 10px !important;
+    table-layout: fixed !important; /* กระจายทุกคอลัมน์ให้กว้างสม่ำเสมอเต็มการ์ด */
   }
 
   table th, table td {
-    padding: 10px 6px !important;
-    font-size: 13px !important;
+    padding: 10px 4px !important;
     text-align: center !important;
-    vertical-align: middle !important;
+    word-wrap: break-word !important;
+    white-space: normal !important; /* ให้ตัดคำสองบรรทัดได้เหมือนรูปมือถือ */
+    font-size: 13px !important;
   }
 
-  /* ตัวครอบตารางป้องกันหลุดจอ แต่รักษาความกว้างเต็มพื้นที่ */
-  .table-responsive, div:has(> table) {
+  /* รักษากล่องวันหมดอายุไม่ให้ล้นขอบ */
+  #pExpDate {
     width: 100% !important;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
 </style>
 
@@ -1316,38 +1326,7 @@ input[type="text"], input[type="date"], input[type="number"], select {
   }
 </script>
 
-<style id="permanent-box-fix">
-  /* บังคับให้ container เส้นประ และ input ภายใน อยู่ในกรอบ 100% เสมอ */
-  div:has(> input[type="date"]), 
-  div:has(> input),
-  .expiry-container,
-  div[style*="border: 2px dashed"],
-  div[style*="dashed"] {
-    display: block !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-    overflow: hidden !important;
-  }
 
-  /* บังคับ input ทุกตัวให้อยู่ในกรอบ ไม่ทะลุออกข้าง */
-  input, select, textarea {
-    display: block !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    box-sizing: border-box !important;
-    margin: 0 !important;
-  }
-
-  /* ดักจับตารางข้อมูล */
-  table {
-    display: block !important;
-    width: 100% !important;
-    overflow-x: auto !important;
-    white-space: nowrap !important;
-  }
-</style>
 
 </body>
 </html>
