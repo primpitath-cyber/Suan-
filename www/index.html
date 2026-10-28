@@ -378,7 +378,7 @@ input[type="text"], input[type="date"], input[type="number"], select {
     
     <!-- Top Bar -->
     <div class="top-bar">
-      <div class="brand-title">🌱 สวนพร้อม</div>
+      <div class="brand-title" onclick="showAuthorModal()" style="cursor:pointer; -webkit-tap-highlight-color:transparent; user-select:none;">🌱 สวนพร้อม</div>
       <div class="shop-badge" onclick="switchTab('tabSettings')">
         <span id="currentShopBadgeText">กำลังโหลด...</span> ⚙️
       </div>
@@ -1737,15 +1737,21 @@ input[type="text"], input[type="date"], input[type="number"], select {
   </div>
 </div>
 
+
 <script>
-  function showAuthorModal() {
-    const modal = document.getElementById('authorModal');
-    if (modal) modal.style.display = 'flex';
-  }
-  function hideAuthorModal() {
-    const modal = document.getElementById('authorModal');
-    if (modal) modal.style.display = 'none';
-  }
+  window.showAuthorModal = function() {
+    var modal = document.getElementById('authorModal');
+    if (modal) {
+      modal.style.display = 'flex';
+    }
+  };
+  window.hideAuthorModal = function() {
+    var modal = document.getElementById('authorModal');
+    if (modal) {
+      modal.style.display = 'none';
+    }
+  };
 </script>
+
 </body>
 </html>
