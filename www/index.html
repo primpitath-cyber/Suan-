@@ -578,7 +578,51 @@ input[type="text"], input[type="date"], input[type="number"], select {
     </div>
 
     <!-- แท็บที่ 4: ตั้งค่าสวน / บัญชีผู้ใช้ -->
-    <div id="tabSettings" class="tab-content">
+    
+  <!-- แท็บสรุปยอด รายรับ-รายจ่าย-กำไรขาดทุน -->
+  <div id="tabReports" class="tab-pane" style="display:none; padding:16px;">
+    <div style="background:#fff; border-radius:16px; padding:18px; box-shadow:0 2px 10px rgba(0,0,0,0.06);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 style="margin:0; font-size:1.15rem; color:#1e4620; font-weight:700;">📊 สรุปยอด รายรับ - รายจ่าย</h3>
+        <input type="month" id="rep-month-input" onchange="loadMonthlyReport()" style="padding:6px 10px; border-radius:8px; border:1px solid #ccc; font-family:inherit;">
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-bottom:16px;">
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:12px; text-align:center;">
+          <div style="font-size:0.8rem; color:#166534; font-weight:600;">รายรับ (ยอดขาย)</div>
+          <div id="rep-inc-val" style="font-size:1.1rem; font-weight:700; color:#15803d; margin-top:4px;">0 บ.</div>
+        </div>
+        <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:12px; text-align:center;">
+          <div style="font-size:0.8rem; color:#991b1b; font-weight:600;">รายจ่าย (ต้นทุน)</div>
+          <div id="rep-exp-val" style="font-size:1.1rem; font-weight:700; color:#b91c1c; margin-top:4px;">0 บ.</div>
+        </div>
+        <div id="rep-net-box" style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:12px; text-align:center;">
+          <div id="rep-net-lbl" style="font-size:0.8rem; color:#1e40af; font-weight:600;">กำไรสุทธิ</div>
+          <div id="rep-net-val" style="font-size:1.1rem; font-weight:700; color:#1d4ed8; margin-top:4px;">0 บ.</div>
+        </div>
+      </div>
+
+      <h4 style="margin:0 0 10px 0; font-size:0.95rem; color:#555;">รายละเอียดรายการขายประจำเดือน</h4>
+      <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.85rem; text-align:left;">
+          <thead>
+            <tr style="border-bottom:2px solid #eee; color:#666;">
+              <th style="padding:8px;">วันที่</th>
+              <th style="padding:8px;">สินค้า</th>
+              <th style="padding:8px; text-align:center;">จำนวน</th>
+              <th style="padding:8px; text-align:right;">ยอดขาย</th>
+              <th style="padding:8px; text-align:right;">กำไร</th>
+            </tr>
+          </thead>
+          <tbody id="rep-table-rows">
+            <tr><td colspan="5" style="text-align:center; padding:16px; color:#999;">กำลังโหลดข้อมูล...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="tabSettings" class="tab-content">
       <div class="card">
         <div class="card-header">
           <h2>👤 บัญชีผู้ใช้งาน</h2>
@@ -623,7 +667,11 @@ input[type="text"], input[type="date"], input[type="number"], select {
         <span class="icon">🔢</span>
         <span>คำนวณถาด</span>
       </button>
-      <button class="nav-item" id="navSettings" onclick="switchTab('tabSettings')">
+      <button class="nav-item" id="navReports" onclick="switchTab('tabReports')">
+      <span class="icon">📊</span>
+      <span>สรุปยอด</span>
+    </button>
+    <button class="nav-item" id="navSettings" onclick="switchTab('tabSettings')">
         <span class="icon">⚙️</span>
         <span>จัดการสวน</span>
       </button>
@@ -730,102 +778,85 @@ input[type="text"], input[type="date"], input[type="number"], select {
 
   
     async function loadMonthlyReport() {
-      const monthInput = document.getElementById('report-month-select');
+    try {
+      const monthInput = document.getElementById('rep-month-input');
       if (!monthInput) return;
       if (!monthInput.value) {
         const now = new Date();
         monthInput.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
       }
-      const selectedMonth = monthInput.value;
-      const [y, m] = selectedMonth.split('-');
-      const startDate = new Date(y, m - 1, 1).toISOString();
-      const endDate = new Date(y, m, 0, 23, 59, 59).toISOString();
+      const [y, m] = monthInput.value.split('-');
+      const startDate = new Date(Number(y), Number(m) - 1, 1).toISOString();
+      const endDate = new Date(Number(y), Number(m), 0, 23, 59, 59).toISOString();
 
-      try {
-        const { data: sales, error } = await sb
-          .from('orders')
-          .select('*, products(name, cost, price)')
-          .eq('shop_id', currentShopId)
-          .gte('created_at', startDate)
-          .lte('created_at', endDate)
-          .order('created_at', { ascending: false });
+      const tbody = document.getElementById('rep-table-rows');
+      if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:16px; color:#999;">กำลังโหลดข้อมูล...</td></tr>';
 
-        let totalIncome = 0;
-        let totalCost = 0;
-        const tbody = document.getElementById('report-table-body');
-
-        if (!sales || sales.length === 0) {
-          if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:16px; color:var(--text-muted);">ไม่มีรายการขายในเดือนนี้</td></tr>';
-          document.getElementById('rep-income').textContent = '0 บ.';
-          document.getElementById('rep-expense').textContent = '0 บ.';
-          document.getElementById('rep-profit').textContent = '0 บ.';
-          return;
-        }
-
-        let rowHtml = '';
-        sales.forEach(s => {
-          const qty = s.quantity || 1;
-          const income = s.total_price || (s.price * qty) || 0;
-          const prodCost = s.products ? (s.products.cost || 0) : 0;
-          const cost = prodCost * qty;
-          const profit = income - cost;
-
-          totalIncome += income;
-          totalCost += cost;
-
-          const dateStr = new Date(s.created_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
-          const prodName = s.products ? s.products.name : (s.item_name || 'สินค้า');
-
-          rowHtml += `<tr style="border-bottom:1px solid var(--border-subtle);">
-            <td style="padding:8px;">${dateStr}</td>
-            <td style="padding:8px;">${prodName}</td>
-            <td style="padding:8px; text-align:center;">${qty}</td>
-            <td style="padding:8px; text-align:right;">${income.toLocaleString()} บ.</td>
-            <td style="padding:8px; text-align:right; color:${profit >= 0 ? '#15803d' : '#b91c1c'}">${profit.toLocaleString()} บ.</td>
-          </tr>`;
-        });
-
-        if (tbody) tbody.innerHTML = rowHtml;
-        const netProfit = totalIncome - totalCost;
-
-        document.getElementById('rep-income').textContent = totalIncome.toLocaleString() + ' บ.';
-        document.getElementById('rep-expense').textContent = totalCost.toLocaleString() + ' บ.';
-        
-        const profitEl = document.getElementById('rep-profit');
-        const profitBox = document.getElementById('rep-profit-box');
-        const profitLabel = document.getElementById('rep-profit-label');
-
-        if (profitEl) {
-          profitEl.textContent = Math.abs(netProfit).toLocaleString() + ' บ.';
-          if (netProfit >= 0) {
-            profitLabel.textContent = 'กำไรสุทธิ';
-            profitLabel.style.color = '#1e40af';
-            profitEl.style.color = '#1d4ed8';
-            profitBox.style.background = '#eff6ff';
-          } else {
-            profitLabel.textContent = 'ขาดทุนสุทธิ';
-            profitLabel.style.color = '#991b1b';
-            profitEl.style.color = '#b91c1c';
-            profitBox.style.background = '#fef2f2';
-          }
-        }
-      } catch (err) {
-        console.error('Report error:', err);
+      // ดึงจากตาราง sales โดยใช้ activeShopId จริงของระบบ
+      let q = sb.from('sales').select('id, total, created_at');
+      if (typeof activeShopId !== 'undefined' && activeShopId) {
+        q = q.eq('shop_id', activeShopId);
       }
+      const { data: sales, error } = await q
+        .gte('created_at', startDate)
+        .lte('created_at', endDate)
+        .order('created_at', { ascending: false });
+
+      if (error || !sales || sales.length === 0) {
+        if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:16px; color:#888;">ไม่มีรายการขายในเดือนนี้</td></tr>';
+        const inc = document.getElementById('rep-inc-val');
+        const exp = document.getElementById('rep-exp-val');
+        const net = document.getElementById('rep-net-val');
+        if (inc) inc.textContent = '0 บ.';
+        if (exp) exp.textContent = '0 บ.';
+        if (net) net.textContent = '0 บ.';
+        return;
+      }
+
+      let totalIncome = 0;
+      let totalCost = 0;
+      let rowHtml = '';
+
+      sales.forEach(s => {
+        const amt = Number(s.total) || 0;
+        totalIncome += amt;
+        const dt = new Date(s.created_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+        rowHtml += `<tr style="border-bottom:1px solid #eee;">
+          <td style="padding:8px;">${dt}</td>
+          <td style="padding:8px;">บิลขาย #${String(s.id).slice(0, 6)}</td>
+          <td style="padding:8px; text-align:center;">1</td>
+          <td style="padding:8px; text-align:right;">${amt.toLocaleString()} บ.</td>
+          <td style="padding:8px; text-align:right; color:#15803d; font-weight:600;">${amt.toLocaleString()} บ.</td>
+        </tr>`;
+      });
+
+      if (tbody) tbody.innerHTML = rowHtml;
+
+      const incEl = document.getElementById('rep-inc-val');
+      const expEl = document.getElementById('rep-exp-val');
+      const netEl = document.getElementById('rep-net-val');
+      const netLbl = document.getElementById('rep-net-lbl');
+      const netBox = document.getElementById('rep-net-box');
+
+      if (incEl) incEl.textContent = totalIncome.toLocaleString() + ' บ.';
+      if (expEl) expEl.textContent = totalCost.toLocaleString() + ' บ.';
+      
+      const netProfit = totalIncome - totalCost;
+      if (netEl) {
+        netEl.textContent = Math.abs(netProfit).toLocaleString() + ' บ.';
+        if (netProfit >= 0) {
+          if (netLbl) { netLbl.textContent = 'กำไรสุทธิ'; netLbl.style.color = '#1e40af'; }
+          netEl.style.color = '#1d4ed8';
+          if (netBox) netBox.style.background = '#eff6ff';
+        } else {
+          if (netLbl) { netLbl.textContent = 'ขาดทุนสุทธิ'; netLbl.style.color = '#991b1b'; }
+          netEl.style.color = '#b91c1c';
+          if (netBox) netBox.style.background = '#fef2f2';
+        }
+      }
+    } catch (err) {
+      console.error('Report error:', err);
     }
-
-    function switchTab(tabId) {
-      if (tabId === 'reports') loadMonthlyReport();
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-
-    document.getElementById(tabId).classList.add('active');
-    
-    if (tabId === 'tabPos') document.getElementById('navPos').classList.add('active');
-    if (tabId === 'tabStock') document.getElementById('navStock').classList.add('active');
-    if (tabId === 'tabCalc') document.getElementById('navCalc').classList.add('active');
-    if (tabId === 'tabSettings') document.getElementById('navSettings').classList.add('active');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function switchAuthMode(mode) {
