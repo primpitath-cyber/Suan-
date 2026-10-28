@@ -792,18 +792,41 @@ input[type="text"], input[type="date"], input[type="number"], select {
       const tbody = document.getElementById('rep-table-rows');
       if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:16px; color:#999;">กำลังโหลดข้อมูล...</td></tr>';
 
-      // ดึงจากตาราง sales โดยใช้ activeShopId จริงของระบบ
-      let q = sb.from('sales').select('id, total, created_at');
-      if (typeof activeShopId !== 'undefined' && activeShopId) {
-        q = q.eq('shop_id', activeShopId);
+      // ดึง ID ร้านปัจจุบันจากทุกลำดับความสำคัญ
+      let currentShop = localStorage.getItem('sp_user_active_shop');
+      if (!currentShop && typeof activeShopId !== 'undefined' && activeShopId) {
+        currentShop = activeShopId;
       }
-      const { data: sales, error } = await q
+      if (!currentShop) {
+        const sel = document.getElementById('shopSelect');
+        if (sel && sel.value) currentShop = sel.value;
+      }
+
+      // ดึงข้อมูลการขายจากตาราง sales
+      let q = sb.from('sales').select('id, total, created_at, sale_items(*, products(name, cost))');
+      if (currentShop) {
+        q = q.eq('shop_id', currentShop);
+      }
+
+      let { data: sales, error } = await q
         .gte('created_at', startDate)
         .lte('created_at', endDate)
         .order('created_at', { ascending: false });
 
+      // หาก join ตารางรองแล้วติด error ให้ดึงแบบปกติโดยกรอง shop_id
+      if (error) {
+        let q2 = sb.from('sales').select('id, total, created_at');
+        if (currentShop) q2 = q2.eq('shop_id', currentShop);
+        const res2 = await q2
+          .gte('created_at', startDate)
+          .lte('created_at', endDate)
+          .order('created_at', { ascending: false });
+        sales = res2.data;
+        error = res2.error;
+      }
+
       if (error || !sales || sales.length === 0) {
-        if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:16px; color:#888;">ไม่มีรายการขายในเดือนนี้</td></tr>';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:16px; color:#888;">ไม่มีรายการขายในเดือนนี้สำหรับร้านนี้</td></tr>';
         const inc = document.getElementById('rep-inc-val');
         const exp = document.getElementById('rep-exp-val');
         const net = document.getElementById('rep-net-val');
@@ -821,13 +844,40 @@ input[type="text"], input[type="date"], input[type="number"], select {
         const amt = Number(s.total) || 0;
         totalIncome += amt;
         const dt = new Date(s.created_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
-        rowHtml += `<tr style="border-bottom:1px solid #eee;">
-          <td style="padding:8px;">${dt}</td>
-          <td style="padding:8px;">บิลขาย #${String(s.id).slice(0, 6)}</td>
-          <td style="padding:8px; text-align:center;">1</td>
-          <td style="padding:8px; text-align:right;">${amt.toLocaleString()} บ.</td>
-          <td style="padding:8px; text-align:right; color:#15803d; font-weight:600;">${amt.toLocaleString()} บ.</td>
-        </tr>`;
+
+        // ตรวจสอบว่ามีรายการสินค้าย่อยในบิลหรือไม่
+        if (s.sale_items && s.sale_items.length > 0) {
+          s.sale_items.forEach((item, idx) => {
+            const pName = item.products ? item.products.name : (item.name || 'สินค้า');
+            const pCost = item.products ? (Number(item.products.cost) || 0) : 0;
+            const pQty = Number(item.quantity) || 1;
+            const itemPrice = Number(item.price) || 0;
+            const itemTotal = itemPrice * pQty;
+            const itemTotalCost = pCost * pQty;
+            totalCost += itemTotalCost;
+            const itemProfit = itemTotal - itemTotalCost;
+
+            rowHtml += `<tr style="border-bottom:1px solid #f1f5f9; ${idx === 0 ? 'background:#f8fafc;' : ''}">
+              <td style="padding:10px 8px; font-weight:${idx === 0 ? '600' : 'normal'};">${idx === 0 ? dt : ''}</td>
+              <td style="padding:10px 8px;">
+                ${idx === 0 ? '<div style="font-size:0.75rem; color:#64748b; margin-bottom:2px;">บิล #' + String(s.id).slice(0, 6) + '</div>' : ''}
+                <div style="color:#0f172a;">${pName}</div>
+              </td>
+              <td style="padding:10px 8px; text-align:center;">${pQty}</td>
+              <td style="padding:10px 8px; text-align:right;">${itemTotal.toLocaleString()} บ.</td>
+              <td style="padding:10px 8px; text-align:right; color:#15803d; font-weight:600;">${itemProfit.toLocaleString()} บ.</td>
+            </tr>`;
+          });
+        } else {
+          // หากเป็นบิลเดี่ยวที่ไม่มีบันทึกตารางย่อย
+          rowHtml += `<tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:10px 8px;">${dt}</td>
+            <td style="padding:10px 8px; font-weight:600; color:#0f172a;">บิลขาย #${String(s.id).slice(0, 6)}</td>
+            <td style="padding:10px 8px; text-align:center;">1</td>
+            <td style="padding:10px 8px; text-align:right;">${amt.toLocaleString()} บ.</td>
+            <td style="padding:10px 8px; text-align:right; color:#15803d; font-weight:600;">${amt.toLocaleString()} บ.</td>
+          </tr>`;
+        }
       });
 
       if (tbody) tbody.innerHTML = rowHtml;
