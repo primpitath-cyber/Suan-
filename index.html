@@ -275,6 +275,44 @@ input[type="text"], input[type="date"], input[type="number"], select {
 
 
 
+
+<style id="wide-table-style">
+  /* ให้กรอบการ์ดขาวขยายความกว้างเต็มพื้นที่การ์ดบน */
+  #tabReports .card, #tabReports > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* ตัวตารางรายงาน ยืดความกว้างให้แต่ละช่องมีพื้นที่ ไม่บีบตัวอักษร */
+  #tabReports table {
+    width: 100% !important;
+    min-width: 650px !important; /* การันตีว่าช่องจะไม่ถูกบีบเบียด */
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+  }
+  
+  #tabReports th, #tabReports td {
+    white-space: nowrap !important; /* ป้องกันข้อความตัดบรรทัดเบียดกัน */
+    padding: 14px 18px !important;   /* เพิ่มระยะห่างซ้าย-ขวาให้โปร่ง */
+    font-size: 0.95rem !important;
+  }
+
+  /* กำหนดสัดส่วนคอลัมน์ให้ยืดขยายยาวพอดี */
+  #tabReports th:nth-child(1), #tabReports td:nth-child(1) { width: 20%; text-align: left; }
+  #tabReports th:nth-child(2), #tabReports td:nth-child(2) { width: 30%; text-align: left; }
+  #tabReports th:nth-child(3), #tabReports td:nth-child(3) { width: 15%; text-align: center; }
+  #tabReports th:nth-child(4), #tabReports td:nth-child(4) { width: 18%; text-align: right; }
+  #tabReports th:nth-child(5), #tabReports td:nth-child(5) { width: 17%; text-align: right; }
+
+  /* กล่องที่หุ้มตาราง ให้เลื่อน scroll แนวนอนได้หากหน้าจอแคบ */
+  #tabReports .table-responsive, #tabReports .table-container {
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+</style>
+
 </head>
 <body>
 
@@ -417,7 +455,7 @@ input[type="text"], input[type="date"], input[type="number"], select {
         <div class="card-header">
           <h2>📜 ประวัติการขายล่าสุด (<span id="recentSalesCount">0</span> รายการ)</h2>
         </div>
-        <div class="table-container">
+        <div class="table-container table-responsive" style="width:100%; overflow-x:auto;">
           <table>
             <thead>
               <tr>
@@ -451,7 +489,7 @@ input[type="text"], input[type="date"], input[type="number"], select {
           </div>
         </div>
 
-        <div class="table-container">
+        <div class="table-container table-responsive" style="width:100%; overflow-x:auto;">
           <table>
             <thead>
               <tr>
@@ -586,7 +624,7 @@ input[type="text"], input[type="date"], input[type="number"], select {
   <div id="tabReports" class="tab-content" style="width:100%; max-width:960px; margin:0 auto; padding:16px 12px; box-sizing:border-box;">
     <div style="background:#fff; border-radius:20px; padding:28px 22px; width:100%; box-sizing:border-box; box-shadow:0 4px 12px rgba(0,0,0,0.03); box-shadow:0 2px 10px rgba(0,0,0,0.06);">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-        <h3 style="margin:0; font-size:1.15rem; color:#1e4620; font-weight:700;">📊 สรุปยอด รายรับ - รายจ่าย</h3>
+        <h3 style="margin:0; font-size:0.95rem; color:#1e4620; font-weight:700;">📊 สรุปยอด รายรับ - รายจ่าย</h3>
         <input type="month" id="rep-month-input" onchange="loadMonthlyReport()" style="padding:6px 10px; border-radius:8px; border:1px solid #ccc; font-family:inherit;">
       </div>
 
@@ -607,7 +645,7 @@ input[type="text"], input[type="date"], input[type="number"], select {
 
       <h4 style="margin:0 0 10px 0; font-size:0.95rem; color:#555;">รายละเอียดรายการขายประจำเดือน</h4>
       <div style="overflow-x:auto;">
-        <table style="width:100%; border-collapse:collapse; font-size:1.2rem; text-align:left; width:100%; border-collapse:separate; border-spacing:0;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.95rem; text-align:left; width:100%; border-collapse:separate; border-spacing:0;">
           <thead>
             <tr style="border-bottom:2px solid #eee; color:#666;">
               <th style="padding:14px 12px;">วันที่</th>
@@ -793,7 +831,7 @@ input[type="text"], input[type="date"], input[type="number"], select {
       const endDate = new Date(Number(y), Number(m), 0, 23, 59, 59).toISOString();
 
       const tbody = document.getElementById('rep-table-rows');
-      if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px; color:#64748b; font-size:1.2rem;">กำลังโหลดข้อมูล...</td></tr>';
+      if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px; color:#64748b; font-size:0.95rem;">กำลังโหลดข้อมูล...</td></tr>';
 
       let currentShop = null;
       try {
@@ -828,7 +866,7 @@ input[type="text"], input[type="date"], input[type="number"], select {
         .order('created_at', { ascending: true });
 
       if (error || !sales || sales.length === 0) {
-        if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:32px; color:#888; font-size:1.2rem;">ไม่มีรายการขายในเดือนนี้</td></tr>';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:32px; color:#888; font-size:0.95rem;">ไม่มีรายการขายในเดือนนี้</td></tr>';
         const inc = document.getElementById('rep-inc-val');
         const exp = document.getElementById('rep-exp-val');
         const net = document.getElementById('rep-net-val');
@@ -862,7 +900,7 @@ input[type="text"], input[type="date"], input[type="number"], select {
         totalCost += billCost;
         const billProfit = amt - billCost;
 
-        rowHtml += `<tr style="border-bottom:1px solid #e2e8f0; font-size:1.25rem;">
+        rowHtml += `<tr style="border-bottom:1px solid #e2e8f0; font-size:0.95rem;">
           <td style="padding:22px 16px; font-weight:500; color:#475569; vertical-align:middle;">${dt}</td>
           <td style="padding:22px 16px; font-weight:600; color:#0f172a; vertical-align:middle;">บิลที่ ${billNo}</td>
           <td style="padding:22px 16px; text-align:center; font-weight:600; color:#334155; vertical-align:middle;">1</td>
@@ -1619,7 +1657,7 @@ input[type="text"], input[type="date"], input[type="number"], select {
       const time = saleDate.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
       tbody.innerHTML += `
         <tr>
-          <td style="padding:14px 10px; font-size:1.2rem;">${time} น.</td>
+          <td style="padding:14px 10px; font-size:0.95rem;">${time} น.</td>
           <td style="padding:14px 10px;"><code style="background: #edf2ee; padding: 4px 8px; border-radius: 6px; font-size: 1.05rem; font-weight:600;">#${s.billNo}</code></td>
           <td style="padding:14px 10px; text-align: right; font-size: 1.05rem;"><strong style="color: var(--primary);">${(Number(s.total) || 0).toLocaleString()}</strong> บ.</td>
         </tr>
@@ -1703,7 +1741,7 @@ input[type="text"], input[type="date"], input[type="number"], select {
 
     </div>
 
-    <button onclick="closeAuthorModalDirect(event)" style="width:100%; padding:14px; background:#16a34a; color:#ffffff; border:none; border-radius:14px; font-size:1.2rem; font-weight:600; cursor:pointer; box-shadow:0 4px 6px -1px rgba(22,163,74,0.3);">
+    <button onclick="closeAuthorModalDirect(event)" style="width:100%; padding:14px; background:#16a34a; color:#ffffff; border:none; border-radius:14px; font-size:0.95rem; font-weight:600; cursor:pointer; box-shadow:0 4px 6px -1px rgba(22,163,74,0.3);">
       ปิดหน้าต่าง
     </button>
   </div>
