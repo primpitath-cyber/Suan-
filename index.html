@@ -877,6 +877,13 @@ input[type="text"], input[type="date"], input[type="number"], select {
     if (tabId === 'tabReports') {
       const b = document.getElementById('navReports');
       if (b) b.classList.add('active');
+      const t = document.getElementById('tabReports');
+      if (t) t.classList.add('active');
+      loadMonthlyReport();
+    }
+    if (tabId === 'tabReports') {
+      const b = document.getElementById('navReports');
+      if (b) b.classList.add('active');
       loadMonthlyReport();
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
