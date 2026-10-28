@@ -202,7 +202,7 @@ input[type="text"], input[type="date"], input[type="number"], select {
     white-space: normal !important;
   }
 
-  /* 2. บังคับกล่องเส้นประและ input วันหมดอายุให้อยู่ในกรอบ ไม่ล้นขอบขวา */
+  /* 2. บังคับกล่องเส้นประและ input วันพร้อมย้ายปลูกให้อยู่ในกรอบ ไม่ล้นขอบขวา */
   div[style*="dashed"] {
     width: 100% !important;
     max-width: 100% !important;
@@ -472,11 +472,11 @@ input[type="text"], input[type="date"], input[type="number"], select {
       </div>
     </div>
 
-    <!-- แท็บที่ 2: จัดการคลังสต็อก & วันหมดอายุ -->
+    <!-- แท็บที่ 2: จัดการคลังสต็อก & วันพร้อมย้ายปลูก -->
     <div id="tabStock" class="tab-content">
       <div class="card">
         <div class="card-header">
-          <h2>📋 ข้อมูลสต็อกสินค้า & วันหมดอายุ</h2>
+          <h2>📋 ข้อมูลสต็อกสินค้า & วันพร้อมย้ายปลูก</h2>
         </div>
         
         <div class="filter-wrapper">
@@ -497,7 +497,7 @@ input[type="text"], input[type="date"], input[type="number"], select {
                 <th>ประเภท</th>
                 <th>ราคา</th>
                 <th>คงเหลือ</th>
-                <th>วันหมดอายุ/ควรปลูกก่อน</th>
+                <th>วันพร้อมย้ายปลูก/ควรปลูกก่อน</th>
                 <th>สถานะสินค้า</th>
                 <th style="text-align: center;">แก้ไข</th>
               </tr>
@@ -560,7 +560,7 @@ input[type="text"], input[type="date"], input[type="number"], select {
 
         <div style="background: #f7faf8; padding: 12px; border-radius: 10px; border: 1.5px dashed var(--accent); width: 100%; box-sizing: border-box; margin-bottom: 12px;">
                 <div class="form-group" style="width: 100%; margin: 0;">
-            <label>⏳ วันหมดอายุ / ควรย้ายปลูกก่อน (ระบุหรือไม่ก็ได้)</label>
+            <label>⏳ วันพร้อมย้ายปลูก / ควรย้ายปลูกก่อน (ระบุหรือไม่ก็ได้)</label>
             <input type="date" id="pExpireDate">
           </div>
         </div>
@@ -1155,7 +1155,7 @@ input[type="text"], input[type="date"], input[type="number"], select {
     if (!expDateStr) {
       return { 
         isExpired: false, 
-        expText: 'ไม่ระบุวันหมดอายุ', 
+        expText: 'ไม่ระบุวันพร้อมย้ายปลูก', 
         statusBadge: '<span class="status-badge badge-success">✨ พร้อมขายปกติ</span>',
         cardBadge: '<span class="pos-exp" style="background:#eaf5ee; color:#2d6a4f;">พร้อมขาย</span>'
       };
@@ -1171,16 +1171,16 @@ input[type="text"], input[type="date"], input[type="number"], select {
     if (diffDays < 0) {
       return {
         isExpired: true,
-        expText: `${expDateStr} (หมดอายุแล้ว)`,
-        statusBadge: `<span class="status-badge badge-danger">⛔ หมดอายุแล้ว (${Math.abs(diffDays)} วันก่อน)</span>`,
-        cardBadge: `<span class="pos-exp" style="background:#fee2e2; color:#b91c1c;">หมดอายุ</span>`
+        expText: `${expDateStr} (พร้อมย้ายปลูกแล้ว)`,
+        statusBadge: `<span class="status-badge <span class="badge" style="background:#dcfce7; color:#166534; font-size:0.75rem; padding:2px 8px; border-radius:12px; font-weight:600;">พร้อมย้ายปลูก</span>`,
+        cardBadge: `<span class="pos-exp" style="background:#fee2e2; color:#b91c1c;">พร้อมย้ายปลูก</span>`
       };
     } else if (diffDays <= 7) {
       return {
         isExpired: false,
         expText: `${expDateStr} (เหลือ ${diffDays} วัน)`,
-        statusBadge: `<span class="status-badge badge-warn">⚠️ ใกล้หมดอายุ (อีก ${diffDays} วัน)</span>`,
-        cardBadge: `<span class="pos-exp" style="background:#fef3c7; color:#b45309;">ใกล้หมดอายุ</span>`
+        statusBadge: `<span class="status-badge badge-warn">⚠️ ใกล้พร้อมย้ายปลูก (อีก ${diffDays} วัน)</span>`,
+        cardBadge: `<span class="pos-exp" style="background:#fef3c7; color:#b45309;">ใกล้พร้อมย้ายปลูก</span>`
       };
     } else {
       return {
@@ -1492,7 +1492,7 @@ input[type="text"], input[type="date"], input[type="number"], select {
 
     const expInfo = calculateExpiry(prod.expire_date);
     if (expInfo.isExpired) {
-      if (!confirm(`⚠️ สินค้านี้เลยวันหมดอายุแล้ว (${prod.expire_date}) ยืนยันจะขายต่อหรือไม่?`)) {
+      if (!confirm(`⚠️ สินค้านี้เลยวันพร้อมย้ายปลูกแล้ว (${prod.expire_date}) ยืนยันจะขายต่อหรือไม่?`)) {
         return;
       }
     }
