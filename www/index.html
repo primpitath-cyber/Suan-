@@ -350,7 +350,7 @@ input[type="text"], input[type="date"], input[type="number"], select {
     
     <!-- Top Bar -->
     <div class="top-bar">
-      <div class="brand-title" id="btnAppBrand" role="button" tabindex="0" onclick="openAuthorModalDirect()" style="cursor:pointer; display:inline-flex; align-items:center; gap:6px; font-weight:700; user-select:none; -webkit-tap-highlight-color:rgba(0,0,0,0.1); padding:4px 8px; border-radius:8px;">🌱 สวนพร้อม</div>
+      <div class="brand-title" id="btnAppBrand" onclick="window.showAuthorModal()" ontouchend="window.showAuthorModal()" style="cursor:pointer; display:inline-flex; align-items:center; gap:6px; font-weight:700; -webkit-tap-highlight-color:rgba(0,0,0,0.1); user-select:none; z-index:9999; position:relative;">🌱 สวนพร้อม</div>
       <div class="shop-badge" onclick="switchTab('tabSettings')">
         <span id="currentShopBadgeText">กำลังโหลด...</span> ⚙️
       </div>
@@ -583,8 +583,8 @@ input[type="text"], input[type="date"], input[type="number"], select {
     <!-- แท็บที่ 4: ตั้งค่าสวน / บัญชีผู้ใช้ -->
     
   <!-- แท็บสรุปยอด รายรับ-รายจ่าย-กำไรขาดทุน -->
-  <div id="tabReports" class="tab-content" style="padding:16px;">
-    <div style="background:#fff; border-radius:16px; padding:18px; box-shadow:0 2px 10px rgba(0,0,0,0.06);">
+  <div id="tabReports" class="tab-content" style="width:100%; max-width:960px; margin:0 auto; padding:16px 12px; box-sizing:border-box;">
+    <div style="background:#fff; border-radius:20px; padding:28px 22px; width:100%; box-sizing:border-box; box-shadow:0 4px 12px rgba(0,0,0,0.03); box-shadow:0 2px 10px rgba(0,0,0,0.06);">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
         <h3 style="margin:0; font-size:1.15rem; color:#1e4620; font-weight:700;">📊 สรุปยอด รายรับ - รายจ่าย</h3>
         <input type="month" id="rep-month-input" onchange="loadMonthlyReport()" style="padding:6px 10px; border-radius:8px; border:1px solid #ccc; font-family:inherit;">
@@ -607,7 +607,7 @@ input[type="text"], input[type="date"], input[type="number"], select {
 
       <h4 style="margin:0 0 10px 0; font-size:0.95rem; color:#555;">รายละเอียดรายการขายประจำเดือน</h4>
       <div style="overflow-x:auto;">
-        <table style="width:100%; border-collapse:collapse; font-size:1.05rem; text-align:left; width:100%; border-collapse:separate; border-spacing:0;">
+        <table style="width:100%; border-collapse:collapse; font-size:1.2rem; text-align:left; width:100%; border-collapse:separate; border-spacing:0;">
           <thead>
             <tr style="border-bottom:2px solid #eee; color:#666;">
               <th style="padding:14px 12px;">วันที่</th>
@@ -1619,7 +1619,7 @@ input[type="text"], input[type="date"], input[type="number"], select {
       const time = saleDate.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
       tbody.innerHTML += `
         <tr>
-          <td style="padding:14px 10px; font-size:1.05rem;">${time} น.</td>
+          <td style="padding:14px 10px; font-size:1.2rem;">${time} น.</td>
           <td style="padding:14px 10px;"><code style="background: #edf2ee; padding: 4px 8px; border-radius: 6px; font-size: 1.05rem; font-weight:600;">#${s.billNo}</code></td>
           <td style="padding:14px 10px; text-align: right; font-size: 1.05rem;"><strong style="color: var(--primary);">${(Number(s.total) || 0).toLocaleString()}</strong> บ.</td>
         </tr>
@@ -1703,7 +1703,7 @@ input[type="text"], input[type="date"], input[type="number"], select {
 
     </div>
 
-    <button onclick="closeAuthorModalDirect(event)" style="width:100%; padding:14px; background:#16a34a; color:#ffffff; border:none; border-radius:14px; font-size:1.05rem; font-weight:600; cursor:pointer; box-shadow:0 4px 6px -1px rgba(22,163,74,0.3);">
+    <button onclick="closeAuthorModalDirect(event)" style="width:100%; padding:14px; background:#16a34a; color:#ffffff; border:none; border-radius:14px; font-size:1.2rem; font-weight:600; cursor:pointer; box-shadow:0 4px 6px -1px rgba(22,163,74,0.3);">
       ปิดหน้าต่าง
     </button>
   </div>
@@ -1749,6 +1749,20 @@ input[type="text"], input[type="date"], input[type="number"], select {
       }, { passive: false });
     }
   });
+</script>
+
+
+<script>
+  window.showAuthorModal = function(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    var m = document.getElementById('authorModal');
+    if (m) m.style.display = 'flex';
+  };
+  window.hideAuthorModal = function(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    var m = document.getElementById('authorModal');
+    if (m) m.style.display = 'none';
+  };
 </script>
 
 </body>
