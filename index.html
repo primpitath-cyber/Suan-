@@ -578,7 +578,51 @@ input[type="text"], input[type="date"], input[type="number"], select {
     </div>
 
     <!-- แท็บที่ 4: ตั้งค่าสวน / บัญชีผู้ใช้ -->
-    <div id="tabSettings" class="tab-content">
+    
+  <!-- แท็บสรุปยอด รายรับ-รายจ่าย-กำไรขาดทุน -->
+  <div id="tabReports" class="tab-pane" style="display:none; padding:16px;">
+    <div style="background:#fff; border-radius:16px; padding:18px; box-shadow:0 2px 10px rgba(0,0,0,0.06);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 style="margin:0; font-size:1.15rem; color:#1e4620; font-weight:700;">📊 สรุปยอด รายรับ - รายจ่าย</h3>
+        <input type="month" id="rep-month-input" onchange="loadMonthlyReport()" style="padding:6px 10px; border-radius:8px; border:1px solid #ccc; font-family:inherit;">
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-bottom:16px;">
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:12px; text-align:center;">
+          <div style="font-size:0.8rem; color:#166534; font-weight:600;">รายรับ (ยอดขาย)</div>
+          <div id="rep-inc-val" style="font-size:1.1rem; font-weight:700; color:#15803d; margin-top:4px;">0 บ.</div>
+        </div>
+        <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:12px; text-align:center;">
+          <div style="font-size:0.8rem; color:#991b1b; font-weight:600;">รายจ่าย (ต้นทุน)</div>
+          <div id="rep-exp-val" style="font-size:1.1rem; font-weight:700; color:#b91c1c; margin-top:4px;">0 บ.</div>
+        </div>
+        <div id="rep-net-box" style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:12px; text-align:center;">
+          <div id="rep-net-lbl" style="font-size:0.8rem; color:#1e40af; font-weight:600;">กำไรสุทธิ</div>
+          <div id="rep-net-val" style="font-size:1.1rem; font-weight:700; color:#1d4ed8; margin-top:4px;">0 บ.</div>
+        </div>
+      </div>
+
+      <h4 style="margin:0 0 10px 0; font-size:0.95rem; color:#555;">รายละเอียดรายการขายประจำเดือน</h4>
+      <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.85rem; text-align:left;">
+          <thead>
+            <tr style="border-bottom:2px solid #eee; color:#666;">
+              <th style="padding:8px;">วันที่</th>
+              <th style="padding:8px;">สินค้า</th>
+              <th style="padding:8px; text-align:center;">จำนวน</th>
+              <th style="padding:8px; text-align:right;">ยอดขาย</th>
+              <th style="padding:8px; text-align:right;">กำไร</th>
+            </tr>
+          </thead>
+          <tbody id="rep-table-rows">
+            <tr><td colspan="5" style="text-align:center; padding:16px; color:#999;">กำลังโหลดข้อมูล...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="tabSettings" class="tab-content">
       <div class="card">
         <div class="card-header">
           <h2>👤 บัญชีผู้ใช้งาน</h2>
@@ -623,7 +667,11 @@ input[type="text"], input[type="date"], input[type="number"], select {
         <span class="icon">🔢</span>
         <span>คำนวณถาด</span>
       </button>
-      <button class="nav-item" id="navSettings" onclick="switchTab('tabSettings')">
+      <button class="nav-item" id="navReports" onclick="switchTab('tabReports')">
+      <span class="icon">📊</span>
+      <span>สรุปยอด</span>
+    </button>
+    <button class="nav-item" id="navSettings" onclick="switchTab('tabSettings')">
         <span class="icon">⚙️</span>
         <span>จัดการสวน</span>
       </button>
@@ -815,6 +863,7 @@ input[type="text"], input[type="date"], input[type="number"], select {
     }
 
     function switchTab(tabId) {
+    if (tabId === 'tabReports') loadMonthlyReport();
       if (tabId === 'reports') loadMonthlyReport();
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
