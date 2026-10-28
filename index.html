@@ -777,106 +777,101 @@ input[type="text"], input[type="date"], input[type="number"], select {
   }
 
   
-    async function loadMonthlyReport() {
-      const monthInput = document.getElementById('report-month-select');
-      if (!monthInput) return;
-      if (!monthInput.value) {
-        const now = new Date();
-        monthInput.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
-      }
-      const selectedMonth = monthInput.value;
-      const [y, m] = selectedMonth.split('-');
-      const startDate = new Date(y, m - 1, 1).toISOString();
-      const endDate = new Date(y, m, 0, 23, 59, 59).toISOString();
-
-      try {
-        const { data: sales, error } = await sb
-          .from('orders')
-          .select('*, products(name, cost, price)')
-          .eq('shop_id', currentShopId)
-          .gte('created_at', startDate)
-          .lte('created_at', endDate)
-          .order('created_at', { ascending: false });
-
-        let totalIncome = 0;
-        let totalCost = 0;
-        const tbody = document.getElementById('report-table-body');
-
-        if (!sales || sales.length === 0) {
-          if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:16px; color:var(--text-muted);">ไม่มีรายการขายในเดือนนี้</td></tr>';
-          document.getElementById('rep-income').textContent = '0 บ.';
-          document.getElementById('rep-expense').textContent = '0 บ.';
-          document.getElementById('rep-profit').textContent = '0 บ.';
-          return;
-        }
-
-        let rowHtml = '';
-        sales.forEach(s => {
-          const qty = s.quantity || 1;
-          const income = s.total_price || (s.price * qty) || 0;
-          const prodCost = s.products ? (s.products.cost || 0) : 0;
-          const cost = prodCost * qty;
-          const profit = income - cost;
-
-          totalIncome += income;
-          totalCost += cost;
-
-          const dateStr = new Date(s.created_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
-          const prodName = s.products ? s.products.name : (s.item_name || 'สินค้า');
-
-          rowHtml += `<tr style="border-bottom:1px solid var(--border-subtle);">
-            <td style="padding:8px;">${dateStr}</td>
-            <td style="padding:8px;">${prodName}</td>
-            <td style="padding:8px; text-align:center;">${qty}</td>
-            <td style="padding:8px; text-align:right;">${income.toLocaleString()} บ.</td>
-            <td style="padding:8px; text-align:right; color:${profit >= 0 ? '#15803d' : '#b91c1c'}">${profit.toLocaleString()} บ.</td>
-          </tr>`;
-        });
-
-        if (tbody) tbody.innerHTML = rowHtml;
-        const netProfit = totalIncome - totalCost;
-
-        document.getElementById('rep-income').textContent = totalIncome.toLocaleString() + ' บ.';
-        document.getElementById('rep-expense').textContent = totalCost.toLocaleString() + ' บ.';
-        
-        const profitEl = document.getElementById('rep-profit');
-        const profitBox = document.getElementById('rep-profit-box');
-        const profitLabel = document.getElementById('rep-profit-label');
-
-        if (profitEl) {
-          profitEl.textContent = Math.abs(netProfit).toLocaleString() + ' บ.';
-          if (netProfit >= 0) {
-            profitLabel.textContent = 'กำไรสุทธิ';
-            profitLabel.style.color = '#1e40af';
-            profitEl.style.color = '#1d4ed8';
-            profitBox.style.background = '#eff6ff';
-          } else {
-            profitLabel.textContent = 'ขาดทุนสุทธิ';
-            profitLabel.style.color = '#991b1b';
-            profitEl.style.color = '#b91c1c';
-            profitBox.style.background = '#fef2f2';
-          }
-        }
-      } catch (err) {
-        console.error('Report error:', err);
-      }
-    }
-
-    function switchTab(tabId) {
-    if (tabId === 'tabReports') loadMonthlyReport();
-      if (tabId === 'reports') loadMonthlyReport();
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-
-    document.getElementById(tabId).classList.add('active');
     
-    if (tabId === 'tabPos') document.getElementById('navPos').classList.add('active');
-    if (tabId === 'tabStock') document.getElementById('navStock').classList.add('active');
-    if (tabId === 'tabCalc') document.getElementById('navCalc').classList.add('active');
-    if (tabId === 'tabSettings') document.getElementById('navSettings').classList.add('active');
-    if (tabId === 'tabReports') document.getElementById('navReports').classList.add('active');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  async function loadMonthlyReport() {
+    const mInput = document.getElementById('rep-month-input');
+    if (!mInput) return;
+    if (!mInput.value) {
+      const now = new Date();
+      mInput.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    }
+    const [y, m] = mInput.value.split('-');
+    const startDate = new Date(y, m - 1, 1).toISOString();
+    const endDate = new Date(y, m, 0, 23, 59, 59).toISOString();
+
+    try {
+      // ดึงข้อมูลจากตาราง sales ของร้านปัจจุบัน
+      let q = sb.from('sales').select('*, sale_items(*, products(*))');
+      if (typeof currentShopId !== 'undefined' && currentShopId) {
+        q = q.eq('shop_id', currentShopId);
+      }
+      const { data: sales, error } = await q
+        .gte('created_at', startDate)
+        .lte('created_at', endDate)
+        .order('created_at', { ascending: false });
+
+      let inc = 0, exp = 0;
+      const tbody = document.getElementById('rep-table-rows');
+
+      if (!sales || sales.length === 0) {
+        if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:16px; color:#888;">ไม่มีรายการขายในเดือนนี้</td></tr>';
+        document.getElementById('rep-inc-val').textContent = '0 บ.';
+        document.getElementById('rep-exp-val').textContent = '0 บ.';
+        document.getElementById('rep-net-val').textContent = '0 บ.';
+        return;
+      }
+
+      let rows = '';
+      sales.forEach(sale => {
+        const dt = new Date(sale.created_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+        const saleTotal = sale.total_amount || sale.total || sale.grand_total || 0;
+        inc += saleTotal;
+
+        if (sale.sale_items && sale.sale_items.length > 0) {
+          sale.sale_items.forEach(item => {
+            const qty = item.quantity || item.qty || 1;
+            const itemPrice = item.price || item.total_price || 0;
+            const itemCost = (item.products && item.products.cost ? item.products.cost : (item.cost || 0)) * qty;
+            const itemProfit = (item.total_price || (itemPrice * qty)) - itemCost;
+            exp += itemCost;
+            const prodName = item.products ? item.products.name : (item.name || item.product_name || 'สินค้า');
+
+            rows += `<tr style="border-bottom:1px solid #eee;">
+              <td style="padding:8px;">${dt}</td>
+              <td style="padding:8px;">${prodName}</td>
+              <td style="padding:8px; text-align:center;">${qty}</td>
+              <td style="padding:8px; text-align:right;">${(item.total_price || (itemPrice * qty)).toLocaleString()} บ.</td>
+              <td style="padding:8px; text-align:right; color:${itemProfit >= 0 ? '#15803d' : '#b91c1c'}; font-weight:600;">${itemProfit.toLocaleString()} บ.</td>
+            </tr>`;
+          });
+        } else {
+          rows += `<tr style="border-bottom:1px solid #eee;">
+            <td style="padding:8px;">${dt}</td>
+            <td style="padding:8px;">รายการขาย #${sale.id ? String(sale.id).slice(0, 6) : '-'}</td>
+            <td style="padding:8px; text-align:center;">-</td>
+            <td style="padding:8px; text-align:right;">${saleTotal.toLocaleString()} บ.</td>
+            <td style="padding:8px; text-align:right; color:#15803d; font-weight:600;">${saleTotal.toLocaleString()} บ.</td>
+          </tr>`;
+        }
+      });
+
+      if (tbody) tbody.innerHTML = rows;
+      const net = inc - exp;
+      document.getElementById('rep-inc-val').textContent = inc.toLocaleString() + ' บ.';
+      document.getElementById('rep-exp-val').textContent = exp.toLocaleString() + ' บ.';
+      
+      const netEl = document.getElementById('rep-net-val');
+      const netLbl = document.getElementById('rep-net-lbl');
+      const netBox = document.getElementById('rep-net-box');
+      if (netEl) {
+        netEl.textContent = Math.abs(net).toLocaleString() + ' บ.';
+        if (net >= 0) {
+          netLbl.textContent = 'กำไรสุทธิ';
+          netLbl.style.color = '#1e40af';
+          netEl.style.color = '#1d4ed8';
+          netBox.style.background = '#eff6ff';
+        } else {
+          netLbl.textContent = 'ขาดทุนสุทธิ';
+          netLbl.style.color = '#991b1b';
+          netEl.style.color = '#b91c1c';
+          netBox.style.background = '#fef2f2';
+        }
+      }
+    } catch (err) {
+      console.error('Report error:', err);
+    }
   }
+
 
   function switchAuthMode(mode) {
     currentAuthMode = mode;
