@@ -443,7 +443,7 @@ input[type="text"], input[type="date"], input[type="number"], select {
 
       <div class="card">
         <div class="card-header">
-          <h2>📜 ประวัติการขายล่าสุด (5 รายการ)</h2>
+          <h2>📜 ประวัติการขายล่าสุด (<span id="recentSalesCount">0</span> รายการ)</h2>
         </div>
         <div class="table-container">
           <table>
@@ -1600,6 +1600,8 @@ input[type="text"], input[type="date"], input[type="number"], select {
 
     if (!currentShop) {
       tbody.innerHTML = '<tr><td colspan="3" class="empty-text">ยังไม่มีประวัติการขาย</td></tr>';
+      const countEl = document.getElementById('recentSalesCount');
+      if (countEl) countEl.innerText = '0';
       const statEl = document.getElementById('statTodaySales');
       if (statEl) statEl.innerText = '0 บ.';
       return;
@@ -1613,6 +1615,8 @@ input[type="text"], input[type="date"], input[type="number"], select {
 
     if (error || !allSales || allSales.length === 0) {
       tbody.innerHTML = '<tr><td colspan="3" class="empty-text">ยังไม่มีประวัติการขาย</td></tr>';
+      const countEl = document.getElementById('recentSalesCount');
+      if (countEl) countEl.innerText = '0';
       const statEl = document.getElementById('statTodaySales');
       if (statEl) statEl.innerText = '0 บ.';
       return;
@@ -1634,6 +1638,8 @@ input[type="text"], input[type="date"], input[type="number"], select {
 
     // นำ 5 รายการล่าสุดมาแสดงในตาราง (เรียงจากล่าสุดลงมา)
     const recent5 = [...salesWithNo].reverse().slice(0, 5);
+    const countEl = document.getElementById('recentSalesCount');
+    if (countEl) countEl.innerText = recent5.length;
 
     tbody.innerHTML = '';
     recent5.forEach(s => {
