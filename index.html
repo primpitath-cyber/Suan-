@@ -859,6 +859,33 @@ input[type="text"], input[type="date"], input[type="number"], select {
     }
   }
 
+  
+  function switchTab(tabId) {
+    if (tabId === 'tabReports' || tabId === 'reports') {
+      tabId = 'tabReports';
+      if (typeof loadMonthlyReport === 'function') loadMonthlyReport();
+    }
+
+    document.querySelectorAll('.tab-content').forEach(el => {
+      el.classList.remove('active');
+    });
+    document.querySelectorAll('.nav-item').forEach(el => {
+      el.classList.remove('active');
+    });
+
+    const targetTab = document.getElementById(tabId);
+    if (targetTab) {
+      targetTab.classList.add('active');
+    }
+
+    if (tabId === 'tabPos') { const b = document.getElementById('navPos'); if (b) b.classList.add('active'); }
+    if (tabId === 'tabStock') { const b = document.getElementById('navStock'); if (b) b.classList.add('active'); }
+    if (tabId === 'tabCalc') { const b = document.getElementById('navCalc'); if (b) b.classList.add('active'); }
+    if (tabId === 'tabReports') { const b = document.getElementById('navReports'); if (b) b.classList.add('active'); }
+    if (tabId === 'tabSettings') { const b = document.getElementById('navSettings'); if (b) b.classList.add('active'); }
+    window.scrollTo(0, 0);
+  }
+
   function switchAuthMode(mode) {
     currentAuthMode = mode;
     const tabLogin = document.getElementById('tabLogin');
