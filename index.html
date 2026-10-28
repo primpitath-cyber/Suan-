@@ -645,14 +645,16 @@ input[type="text"], input[type="date"], input[type="number"], select {
 
       <h4 style="margin:0 0 10px 0; font-size:0.95rem; color:#555;">รายละเอียดรายการขายประจำเดือน</h4>
       <div style="overflow-x:auto;">
-        <table style="width:100%; border-collapse:collapse; font-size:0.95rem; text-align:left; width:100%; border-collapse:separate; border-spacing:0;">
+        <table style="width:100%; min-width:720px; border-collapse:collapse;">
           <thead>
-            <tr style="border-bottom:2px solid #eee; color:#666;">
-              <th style="padding:14px 12px;">วันที่</th>
-              <th style="padding:14px 12px;">สินค้า</th>
-              <th style="padding:14px 12px; text-align:center;">จำนวน</th>
-              <th style="padding:14px 12px; text-align:right;">ยอดขาย</th>
-              <th style="padding:14px 12px; text-align:right;">กำไร</th>
+            <tr style="border-bottom:2px solid #e2e8f0; background:#f8fafc;">
+              <th style="padding:12px 14px; text-align:left; font-size:0.95rem; font-weight:600; color:#475569;">วันที่</th>
+              <th style="padding:12px 14px; text-align:left; font-size:0.95rem; font-weight:600; color:#475569;">สินค้า</th>
+              <th style="padding:12px 14px; text-align:center; font-size:0.95rem; font-weight:600; color:#475569;">รหัสบิล</th>
+              <th style="padding:12px 14px; text-align:center; font-size:0.95rem; font-weight:600; color:#475569;">จำนวน</th>
+              <th style="padding:12px 14px; text-align:right; font-size:0.95rem; font-weight:600; color:#475569;">ต้นทุน</th>
+              <th style="padding:12px 14px; text-align:right; font-size:0.95rem; font-weight:600; color:#475569;">ยอดขาย</th>
+              <th style="padding:12px 14px; text-align:right; font-size:0.95rem; font-weight:600; color:#475569;">กำไร</th>
             </tr>
           </thead>
           <tbody id="rep-table-rows">
@@ -831,7 +833,7 @@ input[type="text"], input[type="date"], input[type="number"], select {
       const endDate = new Date(Number(y), Number(m), 0, 23, 59, 59).toISOString();
 
       const tbody = document.getElementById('rep-table-rows');
-      if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px; color:#64748b; font-size:0.95rem;">กำลังโหลดข้อมูล...</td></tr>';
+      if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:24px; color:#64748b;">กำลังโหลดข้อมูล...</td></tr>';
 
       let currentShop = null;
       try {
@@ -846,19 +848,14 @@ input[type="text"], input[type="date"], input[type="number"], select {
         }
       } catch (e) {}
 
-      if (!currentShop && typeof activeShopId !== 'undefined' && activeShopId) {
-        currentShop = activeShopId;
-      }
+      if (!currentShop && typeof activeShopId !== 'undefined' && activeShopId) currentShop = activeShopId;
       if (!currentShop) {
         const sel = document.getElementById('shopSelect');
         if (sel && sel.value) currentShop = sel.value;
       }
 
-      // ดึงบิลพร้อมรายการสินค้าเพื่อนำต้นทุนมาคิด
       let q = sb.from('sales').select('id, total, created_at, sale_items(*, products(*))');
-      if (currentShop) {
-        q = q.eq('shop_id', currentShop);
-      }
+      if (currentShop) q = q.eq('shop_id', currentShop);
 
       let { data: sales, error } = await q
         .gte('created_at', startDate)
@@ -866,7 +863,7 @@ input[type="text"], input[type="date"], input[type="number"], select {
         .order('created_at', { ascending: true });
 
       if (error || !sales || sales.length === 0) {
-        if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:32px; color:#888; font-size:0.95rem;">ไม่มีรายการขายในเดือนนี้</td></tr>';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:24px; color:#888;">ไม่มีรายการขายในเดือนนี้</td></tr>';
         const inc = document.getElementById('rep-inc-val');
         const exp = document.getElementById('rep-exp-val');
         const net = document.getElementById('rep-net-val');
@@ -881,31 +878,41 @@ input[type="text"], input[type="date"], input[type="number"], select {
       let rowHtml = '';
 
       sales.forEach((s, idx) => {
-        const billNo = idx + 1; // เริ่มนับ 1
+        const billNo = idx + 1;
         const amt = Number(s.total) || 0;
         totalIncome += amt;
         const dt = new Date(s.created_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
 
-        // คำนวณต้นทุนรวมของบิลนี้
         let billCost = 0;
-        let mainProductName = 'ขายหน้าร้าน';
+        let productNames = [];
+        let totalQty = 0;
+
         if (s.sale_items && s.sale_items.length > 0) {
-          mainProductName = s.sale_items.map(it => (it.products ? it.products.name : (it.name || 'สินค้า'))).join(', ');
           s.sale_items.forEach(it => {
-            const costUnit = it.products ? (Number(it.products.cost) || 0) : 0;
+            const pName = it.products ? it.products.name : (it.name || 'สินค้าทั่วไป');
+            productNames.push(pName);
             const qVal = Number(it.quantity) || 1;
+            totalQty += qVal;
+            const costUnit = it.products ? (Number(it.products.cost) || 0) : 0;
             billCost += (costUnit * qVal);
           });
+        } else {
+          productNames.push('ขายหน้าร้าน');
+          totalQty = 1;
         }
+
         totalCost += billCost;
         const billProfit = amt - billCost;
+        const displayProductName = productNames.join(', ');
 
-        rowHtml += `<tr style="border-bottom:1px solid #e2e8f0; font-size:0.95rem;">
-          <td style="padding:22px 16px; font-weight:500; color:#475569; vertical-align:middle;">${dt}</td>
-          <td style="padding:22px 16px; font-weight:600; color:#0f172a; vertical-align:middle;">บิลที่ ${billNo}</td>
-          <td style="padding:22px 16px; text-align:center; font-weight:600; color:#334155; vertical-align:middle;">1</td>
-          <td style="padding:22px 16px; text-align:right; font-weight:600; color:#0f172a; vertical-align:middle;">${amt.toLocaleString()} บ.</td>
-          <td style="padding:22px 16px; text-align:right; font-weight:700; color:#16a34a; vertical-align:middle;">${billProfit.toLocaleString()} บ.</td>
+        rowHtml += `<tr style="border-bottom:1px solid #f1f5f9;">
+          <td style="padding:14px 14px; color:#334155; font-size:0.95rem; white-space:nowrap;">${dt}</td>
+          <td style="padding:14px 14px; font-weight:600; color:#0f172a; font-size:0.95rem; white-space:nowrap;">${displayProductName}</td>
+          <td style="padding:14px 14px; text-align:center; white-space:nowrap;"><code style="background:#edf2ee; color:#166534; padding:3px 7px; border-radius:5px; font-size:0.85rem; font-weight:700;">#${billNo}</code></td>
+          <td style="padding:14px 14px; text-align:center; font-weight:600; color:#475569; font-size:0.95rem; white-space:nowrap;">${totalQty}</td>
+          <td style="padding:14px 14px; text-align:right; font-weight:600; color:#dc2626; font-size:0.95rem; white-space:nowrap;">${billCost.toLocaleString()} บ.</td>
+          <td style="padding:14px 14px; text-align:right; font-weight:600; color:#0f172a; font-size:0.95rem; white-space:nowrap;">${amt.toLocaleString()} บ.</td>
+          <td style="padding:14px 14px; text-align:right; font-weight:700; color:#16a34a; font-size:0.95rem; white-space:nowrap;">${billProfit.toLocaleString()} บ.</td>
         </tr>`;
       });
 
