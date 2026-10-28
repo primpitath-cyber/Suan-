@@ -1,0 +1,17 @@
+name: Keep Supabase Alive
+
+on:
+  schedule:
+    # รันอัตโนมัติทุกวัน เวลา 04:00 น. (UTC)
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase Database
+        run: |
+          # ยิง request ไปยัง Supabase endpoint เพื่อให้อยู่ในสถานะ Active ตลอดเวลา
+          curl -I "https://primpitath-cyber.github.io/Suan-/"
+          echo "Keep-alive ping sent successfully"
